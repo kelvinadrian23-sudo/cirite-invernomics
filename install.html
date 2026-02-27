@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instalación Solicitud CIRBE</title>
+  <script src="https://api.bitrix24.com/api/v1/"></script>
+</head>
+<body>
+  <p>Instalando “Solicitud CIRBE”…</p>
+
+  <script>
+    const HANDLER_URL = "https://kelvinadrian23-sudo.github.io/cirite-invernomics/index.html";
+
+    BX24.init(() => {
+      // 1) Registrar pestaña en la ficha del Deal
+      BX24.callMethod("placement.bind", {
+        PLACEMENT: "CRM_DEAL_TAB",
+        HANDLER: HANDLER_URL,
+        TITLE: "Solicitud CIRBE",
+        DESCRIPTION: "Panel CIRBE dentro del Deal"
+      }, function (res) {
+        // 2) Finalizar instalación (obligatorio)
+        BX24.installFinish();
+      });
+    });
+  </script>
+</body>
+</html>
