@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CIRITE · Invernomics</title>
+<script src="https://api.bitrix24.com/api/v1/"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
@@ -322,10 +323,18 @@
       </div>
       <div class="field">
         <label>URL Webhook Bitrix24</label>
-        <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
-        <span class="field-hint">Del webhook entrante con permiso CRM</span>
+        <div id="webhookField">
+          <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
+          <span class="field-hint">Del webhook entrante con permiso CRM</span>
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- Banner contexto Bitrix24 -->
+  <div id="bx24Banner" style="display:none; align-items:center; gap:10px; padding:10px 16px; margin-bottom:16px;
+    background:rgba(0,230,118,0.07); border:1px solid rgba(0,230,118,0.25); border-radius:6px; font-size:13px; color:#00e676;">
+    <span>⚡</span><span></span>
   </div>
 
   <!-- Modo -->
@@ -390,6 +399,42 @@
 </div>
 
 <script>
+  // ========= BITRIX24 SDK INIT =========
+  let BX24_DEAL_ID = null;
+  let BX24_READY = false;
+
+  function initBX24() {
+    if (typeof BX24 === 'undefined') return;
+    BX24.init(function() {
+      BX24_READY = true;
+      const placement = BX24.placement.info();
+      if (placement && placement.options && placement.options.ID) {
+        BX24_DEAL_ID = placement.options.ID;
+        // Auto-rellenar el campo dealId y ocultar la sección de ID
+        const dealInput = document.getElementById('dealId');
+        if (dealInput) {
+          dealInput.value = BX24_DEAL_ID;
+        }
+        // Mostrar banner de contexto
+        const banner = document.getElementById('bx24Banner');
+        if (banner) {
+          banner.style.display = 'flex';
+          banner.querySelector('span').textContent = `Negociación #${BX24_DEAL_ID} detectada automáticamente`;
+        }
+        // Ocultar campo de webhook (usamos oauth de la app)
+        const webhookField = document.getElementById('webhookField');
+        if (webhookField) webhookField.style.display = 'none';
+      }
+      BX24.fitWindow();
+    });
+  }
+
+  window.addEventListener('load', function() {
+    if (typeof BX24 !== 'undefined') {
+      initBX24();
+    }
+  });
+
   // ========= CONFIG =========
   const FIELDS = {
     titular1: { nombre: 'UF_CRM_1746731416351', dni: 'UF_CRM_1740250548521' },
