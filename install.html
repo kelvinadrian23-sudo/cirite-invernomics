@@ -1,29 +1,35 @@
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Instalación Solicitud CIRBE</title>
-  <script src="https://api.bitrix24.com/api/v1/"></script>
+<meta charset="UTF-8">
+<title>Installing CIRBE App</title>
+<script src="https://api.bitrix24.com/api/v1/"></script>
 </head>
-<body>
-  <p>Instalando “Solicitud CIRBE”…</p>
 
-  <script>
-    const HANDLER_URL = "https://kelvinadrian23-sudo.github.io/cirite-invernomics/index.html";
+<body style="font-family:Arial;padding:30px">
 
-    BX24.init(() => {
-      // 1) Registrar pestaña en la ficha del Deal
-      BX24.callMethod("placement.bind", {
-        PLACEMENT: "CRM_DEAL_TAB",
-        HANDLER: HANDLER_URL,
-        TITLE: "Solicitud CIRBE",
-        DESCRIPTION: "Panel CIRBE dentro del Deal"
-      }, function (res) {
-        // 2) Finalizar instalación (obligatorio)
+<h3>Instalando aplicación...</h3>
+
+<script>
+function installApp() {
+
+    if (typeof BX24 === "undefined") {
+        document.body.innerHTML = "BX24 no disponible";
+        return;
+    }
+
+    BX24.init(function () {
+
         BX24.installFinish();
-      });
+
+        document.body.innerHTML =
+            "<h2>✅ Aplicación instalada correctamente</h2>" +
+            "<p>Puedes cerrar esta ventana.</p>";
     });
-  </script>
+}
+
+installApp();
+</script>
+
 </body>
 </html>
