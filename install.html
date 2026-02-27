@@ -1,35 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Installing CIRBE App</title>
-<script src="https://api.bitrix24.com/api/v1/"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instalación Solicitud CIRBE</title>
+  <script src="https://api.bitrix24.com/api/v1/"></script>
 </head>
 
-<body style="font-family:Arial;padding:30px">
+<body style="font-family: Arial; padding: 30px;">
+  <h3>Instalando aplicación...</h3>
 
-<h3>Instalando aplicación...</h3>
+  <script>
+    (function () {
+      // ✅ URL del panel (tu app principal) que se abrirá como pestaña dentro del Deal
+      const HANDLER_URL = "https://cirite-invernomics.pages.dev/index.html";
 
-<script>
-function installApp() {
-
-    if (typeof BX24 === "undefined") {
-        document.body.innerHTML = "BX24 no disponible";
-        return;
-    }
-
-    BX24.init(function () {
-
-        BX24.installFinish();
-
+      function fail(msg) {
         document.body.innerHTML =
-            "<h2>✅ Aplicación instalada correctamente</h2>" +
-            "<p>Puedes cerrar esta ventana.</p>";
-    });
-}
+          "<h2>❌ Error</h2><p>" + msg + "</p><p>Revisa que Bitrix cargue la librería BX24.</p>";
+      }
 
-installApp();
-</script>
+      if (typeof BX24 === "undefined") {
+        fail("BX24 no disponible.");
+        return;
+      }
 
+      BX24.init(function () {
+        // 1) Registrar pestaña en el Deal
+        BX24.callMethod(
+          "placement.bind",
+          {
+            PLACEMENT: "CRM_DEAL_DETAIL_TAB",
+            HANDLER: HANDLER_URL,
+            TITLE: "Solicitud CIRBE",
+            DESCRIPTION: "Panel CIRBE dentro del Deal",
+          },
+          function (res) {
+            // Si falla el bind, mostramos el error
+            if (res && res.error && res.error()) {
+              fail("placement.bind falló: " + res.error());
+              return;
+            }
+
+            // 2) Finalizar instalación (OBLIGATORIO)
+            BX24.installFinish();
+
+            // 3) Mensaje de OK (opcional)
+            document.body.innerHTML =
+              "<h2>✅ Aplicación instalada correctamente</h2>" +
+              "<p>Puedes cerrar esta ventana y abrir un Deal para ver la pestaña <b>Solicitud CIRBE</b>.</p>";
+          }
+        );
+      });
+    })();
+  </script>
 </body>
 </html>
