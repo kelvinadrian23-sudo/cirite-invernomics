@@ -36,7 +36,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background-image: 
+    background-image:
       linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
     background-size: 40px 40px;
@@ -321,11 +321,11 @@
         <label>Nombre entidad <span class="req">*</span></label>
         <input type="text" id="nombreEntidad" value="BROKER INVERNOMICS SL" maxlength="50">
       </div>
-      <div class="field">
+      <div class="field" id="webhookBlock">
         <label>URL Webhook Bitrix24</label>
         <div id="webhookField">
           <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
-          <span class="field-hint">Del webhook entrante con permiso CRM</span>
+          <span class="field-hint">Solo para pruebas fuera de Bitrix (en Bitrix no hace falta)</span>
         </div>
       </div>
     </div>
@@ -350,11 +350,11 @@
 
   <!-- MODO BITRIX -->
   <div id="modeBitrix">
-    <div class="info-box">
+    <div class="info-box" id="infoDeal">
       Introduce el <strong>ID de la negociación</strong> de Bitrix24 (el número que aparece en la URL al abrir el deal, ej: <strong>...crm/deal/details/123/</strong>) y los datos de los titulares se cargarán automáticamente.
     </div>
 
-    <div class="deal-section">
+    <div class="deal-section" id="dealSection">
       <div class="deal-input-row">
         <div class="field">
           <label>ID de Negociación Bitrix24 <span class="req">*</span></label>
@@ -399,43 +399,7 @@
 </div>
 
 <script>
-  // ========= BITRIX24 SDK INIT =========
-  let BX24_DEAL_ID = null;
-  let BX24_READY = false;
-
-  function initBX24() {
-    if (typeof BX24 === 'undefined') return;
-    BX24.init(function() {
-      BX24_READY = true;
-      const placement = BX24.placement.info();
-      if (placement && placement.options && placement.options.ID) {
-        BX24_DEAL_ID = placement.options.ID;
-        // Auto-rellenar el campo dealId y ocultar la sección de ID
-        const dealInput = document.getElementById('dealId');
-        if (dealInput) {
-          dealInput.value = BX24_DEAL_ID;
-        }
-        // Mostrar banner de contexto
-        const banner = document.getElementById('bx24Banner');
-        if (banner) {
-          banner.style.display = 'flex';
-          banner.querySelector('span').textContent = `Negociación #${BX24_DEAL_ID} detectada automáticamente`;
-        }
-        // Ocultar campo de webhook (usamos oauth de la app)
-        const webhookField = document.getElementById('webhookField');
-        if (webhookField) webhookField.style.display = 'none';
-      }
-      BX24.fitWindow();
-    });
-  }
-
-  window.addEventListener('load', function() {
-    if (typeof BX24 !== 'undefined') {
-      initBX24();
-    }
-  });
-
-  // ========= CONFIG =========
+  // ========= BITRIX / CAMPOS =========
   const FIELDS = {
     titular1: { nombre: 'UF_CRM_1746731416351', dni: 'UF_CRM_1740250548521' },
     titular2: { nombre: 'UF_CRM_1746733312400', dni: 'UF_CRM_1746733431762' },
@@ -447,6 +411,57 @@
   let generatedContent = '';
   let generatedFilename = '';
   let manualClientCount = 0;
+
+  // ========= BX24 INIT =========
+  let BX24_DEAL_ID = null;
+  let BX24_READY = false;
+
+  function detectDealIdFromPlacement() {
+    try {
+      const placement = BX24.placement.info();
+      const opt = (placement && placement.options) ? placement.options : {};
+      return opt.ID || opt.ENTITY_ID || opt.DEAL_ID || opt.dealId || opt.id || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function initBX24() {
+    if (typeof BX24 === 'undefined') return;
+
+    BX24.init(function() {
+      BX24_READY = true;
+
+      // Ocultamos el webhook cuando estamos dentro de Bitrix
+      const webhookBlock = document.getElementById('webhookBlock');
+      if (webhookBlock) webhookBlock.style.display = 'none';
+
+      // Intentar detectar Deal ID desde el placement
+      BX24_DEAL_ID = detectDealIdFromPlacement();
+
+      if (BX24_DEAL_ID) {
+        const dealInput = document.getElementById('dealId');
+        if (dealInput) dealInput.value = BX24_DEAL_ID;
+
+        const banner = document.getElementById('bx24Banner');
+        if (banner) {
+          banner.style.display = 'flex';
+          banner.querySelectorAll('span')[1].textContent =
+            `Negociación #${BX24_DEAL_ID} detectada automáticamente (desde el Deal)`;
+        }
+
+        // Opcional: ocultar la caja de explicación y el input si quieres
+        // document.getElementById('dealSection').style.display = 'none';
+      }
+
+      // Ajustar tamaño
+      BX24.fitWindow();
+    });
+  }
+
+  window.addEventListener('load', function() {
+    if (typeof BX24 !== 'undefined') initBX24();
+  });
 
   // ========= UTILS =========
   function pad(str, len) {
@@ -472,7 +487,7 @@
   function showError(id, msg) {
     const el = document.getElementById(id);
     el.textContent = msg; el.classList.add('visible');
-    setTimeout(() => el.classList.remove('visible'), 6000);
+    setTimeout(() => el.classList.remove('visible'), 7000);
   }
 
   // ========= MODO =========
@@ -486,12 +501,34 @@
     if (mode === 'manual' && manualClientCount === 0) addManualClient();
   }
 
-  // ========= BITRIX =========
-  async function loadFromBitrix() {
-    const webhookUrl = document.getElementById('webhookUrl').value.trim();
-    const dealId = document.getElementById('dealId').value.trim();
+  // ========= BITRIX HELPERS =========
+  function bx24Call(method, params) {
+    return new Promise((resolve, reject) => {
+      BX24.callMethod(method, params, function(result) {
+        if (result.error()) reject(new Error(result.error()));
+        else resolve(result.data());
+      });
+    });
+  }
 
-    if (!webhookUrl) return showError('bitrixError', 'Introduce primero la URL del webhook en la configuración.');
+  async function getDealViaBX24(dealId) {
+    const deal = await bx24Call("crm.deal.get", { id: Number(dealId) });
+    return deal;
+  }
+
+  async function getDealViaWebhook(webhookUrl, dealId) {
+    const url = `${webhookUrl.replace(/\/$/, '')}/crm.deal.get.json?id=${encodeURIComponent(dealId)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error_description || data.error);
+    if (!data.result) throw new Error('Negociación no encontrada.');
+    return data.result;
+  }
+
+  // ========= BITRIX MAIN LOAD =========
+  async function loadFromBitrix() {
+    const dealId = document.getElementById('dealId').value.trim();
     if (!dealId) return showError('bitrixError', 'Introduce el ID de la negociación.');
 
     const loadingEl = document.getElementById('loadingMsg');
@@ -502,18 +539,20 @@
     document.getElementById('loadedData').innerHTML = '';
 
     try {
-      const url = `${webhookUrl.replace(/\/$/, '')}/crm.deal.get.json?id=${dealId}`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
-      const data = await resp.json();
+      let deal;
 
-      if (data.error) throw new Error(data.error_description || data.error);
-      if (!data.result) throw new Error('Negociación no encontrada.');
+      // ✅ Dentro de Bitrix: usar OAuth (BX24.callMethod)
+      if (typeof BX24 !== 'undefined' && BX24_READY) {
+        deal = await getDealViaBX24(dealId);
+      } else {
+        // ✅ Fuera de Bitrix: permitir webhook para pruebas
+        const webhookUrl = document.getElementById('webhookUrl').value.trim();
+        if (!webhookUrl) throw new Error('Fuera de Bitrix: introduce el webhook para probar.');
+        deal = await getDealViaWebhook(webhookUrl, dealId);
+      }
 
-      const deal = data.result;
       const dealTitle = deal.TITLE || `Negociación #${dealId}`;
 
-      // Extraer titulares
       loadedTitulares = [];
       const titularDefs = [
         { label: '1ER TITULAR', ...FIELDS.titular1 },
@@ -524,13 +563,11 @@
       for (const t of titularDefs) {
         const nombre = (deal[t.nombre] || '').trim();
         const dni = (deal[t.dni] || '').trim();
-        if (nombre || dni) {
-          loadedTitulares.push({ label: t.label, nombre, dni });
-        }
+        if (nombre || dni) loadedTitulares.push({ label: t.label, nombre, dni });
       }
 
       if (loadedTitulares.length === 0) {
-        throw new Error('No se encontraron datos de titulares en esta negociación. Verifica que los campos "Nombre y apellido" y "DNI/NIE/PASAPORTE" estén rellenos.');
+        throw new Error('No se encontraron titulares. Revisa que los UF_CRM de nombre/DNI estén rellenos.');
       }
 
       renderLoadedData(dealTitle, dealId);
@@ -570,14 +607,14 @@
             <div class="data-grid">
               <div class="data-item">
                 <label>Nombre y apellidos</label>
-                <input type="text" id="lt-nombre-${i}" value="${t.nombre}" 
+                <input type="text" id="lt-nombre-${i}" value="${escapeHtml(t.nombre)}"
                   class="data-value ${!nombreOk ? 'editable' : ''}"
                   style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;"
                   oninput="updateLoadedTitular(${i})">
               </div>
               <div class="data-item">
                 <label>DNI / NIE / Pasaporte</label>
-                <input type="text" id="lt-dni-${i}" value="${t.dni}" maxlength="9"
+                <input type="text" id="lt-dni-${i}" value="${escapeHtml(t.dni)}" maxlength="9"
                   class="data-value ${!dniOk ? 'editable' : ''}"
                   style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;text-transform:uppercase;"
                   oninput="updateLoadedTitular(${i})">
@@ -594,6 +631,15 @@
   function updateLoadedTitular(i) {
     loadedTitulares[i].nombre = document.getElementById(`lt-nombre-${i}`).value;
     loadedTitulares[i].dni = document.getElementById(`lt-dni-${i}`).value;
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
   // ========= MANUAL =========
@@ -651,15 +697,11 @@
   }
 
   // ========= PARSE NOMBRE =========
-  // El campo "Nombre y apellido" puede venir como "KELVIN ADRIAN MACHADO BRITO"
-  // Para el registro A0002: apellidos (60) + nombre (30)
-  // Asumimos: últimas 2 palabras = apellidos, primeras = nombre
   function parseName(fullName) {
     const parts = toUpper(fullName).trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return { nombre: '', apellidos: '' };
     if (parts.length === 1) return { nombre: parts[0], apellidos: parts[0] };
     if (parts.length === 2) return { nombre: parts[0], apellidos: parts[1] };
-    // 3+ palabras: últimas 2 = apellidos, resto = nombre
     const apellidos = parts.slice(-2).join(' ');
     const nombre = parts.slice(0, -2).join(' ');
     return { nombre, apellidos };
@@ -677,24 +719,31 @@
 
     if (currentMode === 'bitrix') {
       if (loadedTitulares.length === 0) return showError('errorMsg', 'Primero carga los datos desde Bitrix24.');
+
       for (let i = 0; i < loadedTitulares.length; i++) {
         const t = loadedTitulares[i];
         const dni = toUpper((document.getElementById(`lt-dni-${i}`)?.value || t.dni).trim());
         const nombreCompleto = (document.getElementById(`lt-nombre-${i}`)?.value || t.nombre).trim();
+
         if (!dni || dni.length !== 9) return showError('errorMsg', `El DNI del ${t.label} debe tener 9 caracteres.`);
         if (!nombreCompleto) return showError('errorMsg', `El nombre del ${t.label} es obligatorio.`);
+
         const { nombre, apellidos } = parseName(nombreCompleto);
         titulares.push({ dni, nombre, apellidos });
       }
+
     } else {
       const cards = document.querySelectorAll('.client-card');
       if (cards.length === 0) return showError('errorMsg', 'Añade al menos un titular.');
+
       for (const card of cards) {
         const idx = card.id.split('-')[1];
         const dni = toUpper((document.getElementById(`mc-dni-${idx}`)?.value || '').trim());
         const nombreCompleto = (document.getElementById(`mc-nombre-${idx}`)?.value || '').trim();
+
         if (!dni || dni.length !== 9) return showError('errorMsg', `El DNI del Titular ${idx} debe tener 9 caracteres.`);
         if (!nombreCompleto) return showError('errorMsg', `El nombre del Titular ${idx} es obligatorio.`);
+
         const { nombre, apellidos } = parseName(nombreCompleto);
         titulares.push({ dni, nombre, apellidos });
       }
@@ -731,7 +780,7 @@
     previewEl.innerHTML = lines.map(line => {
       const type = line.substring(0,5);
       let cls = type === 'AI000' ? 'line-ai000' : type === 'A0000' ? 'line-a0000' : 'line-a0002';
-      return `<span class="${cls}">${line.substring(0,100)}…</span>`;
+      return `<span class="${cls}">${escapeHtml(line.substring(0,100))}…</span>`;
     }).join('\n');
 
     document.getElementById('previewSection').classList.add('visible');
