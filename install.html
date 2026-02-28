@@ -1,116 +1,12 @@
-<!DOCTYPE html>
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Instalación Solicitud CIRBE</title>
-<script src="https://api.bitrix24.com/api/v1/"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 24px; }
-    .ok { color: #1a7f37; }
-    .err { color: #b42318; }
-    code { background:#f4f4f4; padding:2px 6px; border-radius:4px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instalación Solicitud CIRBE</title>
 </head>
-
-<body style="font-family: Arial; padding: 30px;">
-  <h3>Instalando aplicación...</h3>
-<body>
-  <h2>Instalando “Solicitud CIRBE”…</h2>
-  <p id="status">Inicializando…</p>
-
-<script>
-    (function () {
-      // ✅ URL del panel (tu app principal) que se abrirá como pestaña dentro del Deal
-      const HANDLER_URL = "https://cirite-invernomics.pages.dev/index.html";
-
-      function fail(msg) {
-        document.body.innerHTML =
-          "<h2>❌ Error</h2><p>" + msg + "</p><p>Revisa que Bitrix cargue la librería BX24.</p>";
-      }
-
-      if (typeof BX24 === "undefined") {
-        fail("BX24 no disponible.");
-        return;
-      }
-
-      BX24.init(function () {
-        // 1) Registrar pestaña en el Deal
-        BX24.callMethod(
-          "placement.bind",
-          {
-            PLACEMENT: "CRM_DEAL_DETAIL_TAB",
-            HANDLER: HANDLER_URL,
-            TITLE: "Solicitud CIRBE",
-            DESCRIPTION: "Panel CIRBE dentro del Deal",
-          },
-          function (res) {
-            // Si falla el bind, mostramos el error
-            if (res && res.error && res.error()) {
-              fail("placement.bind falló: " + res.error());
-              return;
-            }
-
-            // 2) Finalizar instalación (OBLIGATORIO)
-            BX24.installFinish();
-
-            // 3) Mensaje de OK (opcional)
-            document.body.innerHTML =
-              "<h2>✅ Aplicación instalada correctamente</h2>" +
-              "<p>Puedes cerrar esta ventana y abrir un Deal para ver la pestaña <b>Solicitud CIRBE</b>.</p>";
-    // ✅ ESTE debe ser el handler que se abrirá dentro del Deal (TAB)
-    const HANDLER_URL = "https://throbbing-sound-91ad.kelvinadrian-23.workers.dev/";
-
-    function setStatus(msg, cls) {
-      const el = document.getElementById("status");
-      el.textContent = msg;
-      el.className = cls || "";
-    }
-
-    function finishInstallOk(note) {
-      setStatus(note || "✅ Instalación completada. Puedes cerrar esta ventana.", "ok");
-      try { BX24.installFinish(); } catch (e) {}
-    }
-
-    function finishInstallError(err) {
-      console.error(err);
-      setStatus("❌ Error instalando: " + (err && err.error_description ? err.error_description : JSON.stringify(err)), "err");
-    }
-
-    BX24.init(function () {
-      // Intentamos bind de la pestaña del Deal
-      BX24.callMethod("placement.bind", {
-        PLACEMENT: "CRM_DEAL_TAB",
-        HANDLER: HANDLER_URL,
-        TITLE: "Solicitud CIRBE",
-        DESCRIPTION: "Generador CIRITE dentro del Deal"
-      }, function (res) {
-
-        // Si la llamada en sí “falló”:
-        if (res.error && res.error()) {
-          const err = res.error();
-          const desc = (err && (err.error_description || err.error)) ? (err.error_description || err.error) : "";
-
-          // ✅ Caso típico: ya estaba creado → lo tratamos como éxito
-          if (String(desc).toLowerCase().includes("already binded")) {
-            finishInstallOk("ℹ️ La pestaña ya existía (“already binded”). Instalación marcada como correcta.");
-            return;
-}
-        );
-
-          // Otros errores reales
-          finishInstallError(err);
-          return;
-        }
-
-        // Éxito normal
-        finishInstallOk("✅ Pestaña creada y app instalada. Puedes cerrar esta ventana.");
-});
-    })();
-    });
-</script>
+<body style="font-family: Arial; padding: 24px;">
+  <h2>Instalación</h2>
+  <p>Esta instalación se gestiona desde Bitrix24 mediante Cloudflare Worker.</p>
 </body>
 </html>
