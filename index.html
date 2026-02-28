@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,297 +8,92 @@
 <script src="https://api.bitrix24.com/api/v1/"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-
   :root {
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2235;
-    --border: #1e2d45;
-    --accent: #00d4ff;
-    --accent2: #0066ff;
-    --success: #00e676;
-    --warning: #ffab00;
-    --error: #ff5252;
-    --text: #e8edf5;
-    --text2: #8a9bb5;
-    --text3: #4a5568;
+    --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;
+    --accent:#00d4ff;--accent2:#0066ff;--success:#00e676;--warning:#ffab00;
+    --error:#ff5252;--text:#e8edf5;--text2:#8a9bb5;--text3:#4a5568;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: 
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-  }
-
-  .header { margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 28px; }
-
-  .header-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3);
-    border-radius: 4px; padding: 4px 12px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;
-  }
-  .header-badge::before {
-    content: ''; width: 6px; height: 6px; background: var(--accent);
-    border-radius: 50%; animation: pulse 2s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; }
-  h1 span { color: var(--accent); }
-  .header-sub { color: var(--text2); font-size: 13px; }
-
-  /* Config section */
-  .config-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 20px; margin-bottom: 24px;
-  }
-
-  .config-title {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text2); margin-bottom: 16px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .config-title::before {
-    content: '⚙'; font-size: 13px; color: var(--accent);
-  }
-
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-  .form-row.single { grid-template-columns: 1fr; }
-  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-  .form-row:last-child { margin-bottom: 0; }
-
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); }
-  label .req { color: var(--accent); margin-left: 2px; }
-
-  input, select {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 6px; padding: 9px 12px;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
-  }
-  input:focus, select:focus {
-    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
-  }
-  input::placeholder { color: var(--text3); font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
-  .field-hint { font-size: 11px; color: var(--text3); }
-
-  /* Modo selector */
-  .mode-tabs {
-    display: flex; gap: 8px; margin-bottom: 24px;
-  }
-  .mode-tab {
-    flex: 1; padding: 12px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text2); font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
-  }
-  .mode-tab.active {
-    background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent);
-  }
-  .mode-tab:hover:not(.active) { border-color: var(--text3); color: var(--text); }
-
-  /* Deal ID input */
-  .deal-section { margin-bottom: 20px; }
-  .deal-input-row {
-    display: flex; gap: 10px; align-items: flex-end;
-  }
-  .deal-input-row .field { flex: 1; }
-
-  .btn-load {
-    padding: 9px 20px; background: rgba(0,212,255,0.15); border: 1px solid var(--accent);
-    border-radius: 6px; color: var(--accent); font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    height: 38px;
-  }
-  .btn-load:hover { background: rgba(0,212,255,0.25); }
-  .btn-load:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Titulares cargados */
-  .loaded-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden; margin-bottom: 12px;
-  }
-  .loaded-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 18px; background: var(--surface2); border-bottom: 1px solid var(--border);
-  }
-  .loaded-header-left { display: flex; align-items: center; gap: 10px; }
-  .titular-badge {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
-    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
-    padding: 2px 8px; border-radius: 3px;
-  }
-  .status-ok { color: var(--success); font-size: 12px; }
-  .status-warn { color: var(--warning); font-size: 12px; }
-  .loaded-body { padding: 16px 18px; }
-
-  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .data-item label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; display: block; }
-  .data-value {
-    font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text);
-    background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
-    padding: 7px 10px;
-  }
-  .data-value.empty { color: var(--text3); font-style: italic; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; }
-  .data-value.editable { border-color: var(--warning); }
-
-  /* Manual mode */
-  .manual-section { display: none; }
-  .manual-section.visible { display: block; }
-
-  .clients-container { display: flex; flex-direction: column; gap: 12px; }
-  .client-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden; transition: border-color 0.2s;
-  }
-  .client-card:focus-within { border-color: rgba(0,212,255,0.3); }
-  .client-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 18px; background: var(--surface2); border-bottom: 1px solid var(--border);
-  }
-  .client-header-left { display: flex; align-items: center; gap: 10px; }
-  .client-index {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
-    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
-    padding: 2px 8px; border-radius: 3px;
-  }
-  .client-preview { font-size: 12px; color: var(--text2); }
-  .btn-remove {
-    background: none; border: 1px solid var(--border); color: var(--text3);
-    padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif; transition: all 0.2s;
-  }
-  .btn-remove:hover { border-color: var(--error); color: var(--error); }
-  .client-body { padding: 16px 18px; }
-
-  .btn-add {
-    width: 100%; padding: 12px; background: transparent;
-    border: 1px dashed var(--border); border-radius: 8px;
-    color: var(--text2); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
-    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
-    margin-top: 10px;
-  }
-  .btn-add:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.05); }
-  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* Generate */
-  .generate-section { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .btn-generate {
-    padding: 14px 48px; background: linear-gradient(135deg, var(--accent2), var(--accent));
-    border: none; border-radius: 8px; color: #000;
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 600;
-    letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.3s;
-  }
-  .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
-  .btn-generate:active { transform: translateY(0); }
-
-  /* Loading */
-  .loading {
-    display: none; align-items: center; gap: 10px;
-    color: var(--accent); font-size: 13px; padding: 12px 16px;
-    background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
-    border-radius: 6px;
-  }
-  .loading.visible { display: flex; }
-  .spinner {
-    width: 16px; height: 16px; border: 2px solid rgba(0,212,255,0.3);
-    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Error / success */
-  .msg {
-    display: none; border-radius: 6px; padding: 11px 15px; font-size: 13px;
-  }
-  .msg.visible { display: block; }
-  .msg.error { background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); color: var(--error); }
-  .msg.success { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--success); }
-
-  /* Preview */
-  .preview-section { margin-top: 28px; display: none; }
-  .preview-section.visible { display: block; animation: fadeIn 0.4s ease; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-
-  .preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .preview-title {
-    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--success); display: flex; align-items: center; gap: 8px;
-  }
-  .preview-title::before {
-    content: '✓'; background: var(--success); color: #000;
-    width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 10px; font-weight: 700;
-  }
-  .preview-box {
-    background: #060a12; border: 1px solid var(--border); border-radius: 6px;
-    padding: 14px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--text2); overflow-x: auto; white-space: pre; line-height: 1.8;
-    max-height: 160px; overflow-y: auto;
-  }
-  .line-ai000 { color: #00d4ff; }
-  .line-a0000 { color: #4a5568; }
-  .line-a0002 { color: #00e676; }
-
-  .btn-download {
-    padding: 10px 28px; background: var(--surface2); border: 1px solid var(--success);
-    border-radius: 6px; color: var(--success); font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .btn-download:hover { background: rgba(0,230,118,0.1); }
-
-  .info-box {
-    background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15);
-    border-radius: 6px; padding: 12px 16px; font-size: 12px; color: var(--text2);
-    line-height: 1.6; margin-bottom: 20px;
-  }
-  .info-box strong { color: var(--accent); }
-
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  .section-label {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text2); margin-bottom: 14px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .section-num {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
-    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
-    width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-  }
-
-  @media (max-width: 600px) {
-    .form-row, .form-row.triple { grid-template-columns: 1fr; }
-    .data-grid { grid-template-columns: 1fr; }
-    h1 { font-size: 22px; }
-  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .container{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:40px 24px 80px;}
+  .header{margin-bottom:40px;border-bottom:1px solid var(--border);padding-bottom:28px;}
+  .header-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:4px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;}
+  .header-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;}
+  h1 span{color:var(--accent);}
+  .header-sub{color:var(--text2);font-size:13px;}
+  .config-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px;}
+  .config-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .config-title::before{content:'⚙';font-size:13px;color:var(--accent);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .form-row.triple{grid-template-columns:1fr 1fr 1fr;}
+  .form-row:last-child{margin-bottom:0;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);}
+  label .req{color:var(--accent);margin-left:2px;}
+  input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;transition:border-color .2s,box-shadow .2s;width:100%;}
+  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1);}
+  input::placeholder{color:var(--text3);font-family:'IBM Plex Sans',sans-serif;font-size:12px;}
+  .field-hint{font-size:11px;color:var(--text3);}
+  .mode-tabs{display:flex;gap:8px;margin-bottom:24px;}
+  .mode-tab{flex:1;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;}
+  .mode-tab.active{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent);}
+  .deal-input-row{display:flex;gap:10px;align-items:flex-end;}
+  .deal-input-row .field{flex:1;}
+  .btn-load{padding:9px 20px;background:rgba(0,212,255,0.15);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;height:38px;}
+  .btn-load:hover{background:rgba(0,212,255,0.25);}
+  .btn-load:disabled{opacity:.5;cursor:not-allowed;}
+  .loaded-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+  .loaded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);}
+  .loaded-header-left{display:flex;align-items:center;gap:10px;}
+  .titular-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);padding:2px 8px;border-radius:3px;}
+  .status-ok{color:var(--success);font-size:12px;}
+  .status-warn{color:var(--warning);font-size:12px;}
+  .loaded-body{padding:16px 18px;}
+  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .data-value{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;}
+  .data-value.editable{border-color:var(--warning);}
+  .manual-section{display:none;}
+  .manual-section.visible{display:block;}
+  .clients-container{display:flex;flex-direction:column;gap:12px;}
+  .client-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .client-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);}
+  .client-header-left{display:flex;align-items:center;gap:10px;}
+  .client-index{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);padding:2px 8px;border-radius:3px;}
+  .client-preview{font-size:12px;color:var(--text2);}
+  .btn-remove{background:none;border:1px solid var(--border);color:var(--text3);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .btn-remove:hover{border-color:var(--error);color:var(--error);}
+  .client-body{padding:16px 18px;}
+  .btn-add{width:100%;padding:12px;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;}
+  .btn-add:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.05);}
+  .btn-add:disabled{opacity:.4;cursor:not-allowed;}
+  .generate-section{margin-top:32px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .btn-generate{padding:14px 48px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:8px;color:#000;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .3s;}
+  .btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,0.3);}
+  .loading{display:none;align-items:center;gap:10px;color:var(--accent);font-size:13px;padding:12px 16px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:6px;}
+  .loading.visible{display:flex;}
+  .spinner{width:16px;height:16px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .msg{display:none;border-radius:6px;padding:11px 15px;font-size:13px;}
+  .msg.visible{display:block;}
+  .msg.error{background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);color:var(--error);}
+  .preview-section{margin-top:28px;display:none;}
+  .preview-section.visible{display:block;}
+  .preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .preview-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--success);display:flex;align-items:center;gap:8px;}
+  .preview-box{background:#060a12;border:1px solid var(--border);border-radius:6px;padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);overflow-x:auto;white-space:pre;line-height:1.8;max-height:160px;overflow-y:auto;}
+  .line-ai000{color:#00d4ff;}.line-a0000{color:#4a5568;}.line-a0002{color:#00e676;}
+  .btn-download{padding:10px 28px;background:var(--surface2);border:1px solid var(--success);border-radius:6px;color:var(--success);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;}
+  .info-box{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:20px;}
+  .info-box strong{color:var(--accent);}
+  #bx24Banner{display:none;align-items:center;gap:10px;padding:10px 16px;margin-bottom:16px;border-radius:6px;font-size:13px;}
+  #bx24Banner.green{background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.25);color:#00e676;}
+  #bx24Banner.yellow{background:rgba(255,171,0,0.07);border:1px solid rgba(255,171,0,0.25);color:#ffab00;}
+  .section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+  @media(max-width:600px){.form-row,.form-row.triple{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}h1{font-size:22px}}
 </style>
 </head>
 <body>
@@ -309,7 +105,6 @@
     <p class="header-sub">Solicitud de informes CIRBE al Banco de España · Instrucción 1996.01 v16.3</p>
   </div>
 
-  <!-- Config -->
   <div class="config-card">
     <div class="config-title">Configuración</div>
     <div class="form-row triple">
@@ -321,40 +116,27 @@
         <label>Nombre entidad <span class="req">*</span></label>
         <input type="text" id="nombreEntidad" value="BROKER INVERNOMICS SL" maxlength="50">
       </div>
-      <div class="field">
+      <div class="field" id="webhookBlock">
         <label>URL Webhook Bitrix24</label>
-        <div id="webhookField">
-          <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
-          <span class="field-hint">Del webhook entrante con permiso CRM</span>
-        </div>
+        <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
+        <span class="field-hint">Solo para pruebas fuera de Bitrix</span>
       </div>
     </div>
   </div>
 
-  <!-- Banner contexto Bitrix24 -->
-  <div id="bx24Banner" style="display:none; align-items:center; gap:10px; padding:10px 16px; margin-bottom:16px;
-    background:rgba(0,230,118,0.07); border:1px solid rgba(0,230,118,0.25); border-radius:6px; font-size:13px; color:#00e676;">
-    <span>⚡</span><span></span>
-  </div>
+  <div id="bx24Banner"><span>⚡</span><span id="bx24Msg"></span></div>
 
-  <!-- Modo -->
   <div class="section-label"><div class="section-num">01</div>Modo de introducción de datos</div>
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabBitrix" onclick="setMode('bitrix')">
-      🔗 Cargar desde Bitrix24
-    </button>
-    <button class="mode-tab" id="tabManual" onclick="setMode('manual')">
-      ✏️ Introducir manualmente
-    </button>
+    <button class="mode-tab active" id="tabBitrix" onclick="setMode('bitrix')">🔗 Cargar desde Bitrix24</button>
+    <button class="mode-tab" id="tabManual" onclick="setMode('manual')">✏️ Introducir manualmente</button>
   </div>
 
-  <!-- MODO BITRIX -->
   <div id="modeBitrix">
     <div class="info-box">
-      Introduce el <strong>ID de la negociación</strong> de Bitrix24 (el número que aparece en la URL al abrir el deal, ej: <strong>...crm/deal/details/123/</strong>) y los datos de los titulares se cargarán automáticamente.
+      Introduce el <strong>ID de la negociación</strong> (número en la URL, ej: <strong>...crm/deal/details/123/</strong>) y los datos de los titulares se cargarán automáticamente.
     </div>
-
-    <div class="deal-section">
+    <div class="deal-section" style="margin-bottom:20px;">
       <div class="deal-input-row">
         <div class="field">
           <label>ID de Negociación Bitrix24 <span class="req">*</span></label>
@@ -363,31 +145,22 @@
         <button class="btn-load" id="btnLoad" onclick="loadFromBitrix()">Cargar datos</button>
       </div>
     </div>
-
-    <div class="loading" id="loadingMsg">
-      <div class="spinner"></div>
-      Conectando con Bitrix24...
-    </div>
-
+    <div class="loading" id="loadingMsg"><div class="spinner"></div>Conectando con Bitrix24...</div>
     <div class="msg error" id="bitrixError"></div>
-
     <div id="loadedData"></div>
   </div>
 
-  <!-- MODO MANUAL -->
   <div id="modeManual" class="manual-section">
     <div class="section-label" style="margin-top:8px"><div class="section-num">02</div>Titulares a consultar</div>
     <div class="clients-container" id="clientsContainer"></div>
     <button class="btn-add" id="btnAdd" onclick="addManualClient()">+ Añadir titular (máx. 3)</button>
   </div>
 
-  <!-- Generar -->
   <div class="generate-section">
     <button class="btn-generate" onclick="generateFile()">Generar fichero CIRITE</button>
     <div class="msg error" id="errorMsg"></div>
   </div>
 
-  <!-- Preview -->
   <div class="preview-section" id="previewSection">
     <div class="preview-header">
       <div class="preview-title">Fichero generado correctamente</div>
@@ -397,405 +170,243 @@
   </div>
 
 </div>
-
 <script>
-  // ========= BITRIX24 SDK INIT =========
-  let BX24_DEAL_ID = null;
-  let BX24_READY = false;
+  const FIELDS = {
+    titular1:{nombre:'UF_CRM_1746731416351',dni:'UF_CRM_1740250548521'},
+    titular2:{nombre:'UF_CRM_1746733312400',dni:'UF_CRM_1746733431762'},
+    titular3:{nombre:'UF_CRM_1764923270930',dni:'UF_CRM_1764923331192'},
+  };
 
-  function showBanner(msg, color) {
-    const banner = document.getElementById('bx24Banner');
-    if (!banner) return;
-    banner.style.display = 'flex';
-    banner.style.color = color || '#00e676';
-    banner.style.borderColor = (color || '#00e676').replace(')', ',0.25)').replace('rgb', 'rgba');
-    banner.querySelectorAll('span')[1].textContent = msg;
+  let currentMode='bitrix', loadedTitulares=[], generatedContent='', generatedFilename='', manualClientCount=0;
+  let BX24_DEAL_ID=null, BX24_READY=false;
+
+  function showBanner(msg, type) {
+    const el=document.getElementById('bx24Banner');
+    el.className = type==='yellow' ? 'yellow' : 'green';
+    el.style.display='flex';
+    document.getElementById('bx24Msg').textContent=msg;
   }
 
   function applyDealId(id) {
-    BX24_DEAL_ID = String(id);
-    const dealInput = document.getElementById('dealId');
-    if (dealInput) dealInput.value = BX24_DEAL_ID;
-    showBanner(`⚡ Negociación #${BX24_DEAL_ID} detectada automáticamente`);
-    // Ocultar campo webhook dentro de Bitrix
-    const webhookBlock = document.getElementById('webhookBlock');
-    if (webhookBlock) webhookBlock.style.display = 'none';
+    BX24_DEAL_ID=String(id);
+    const inp=document.getElementById('dealId');
+    if(inp) inp.value=BX24_DEAL_ID;
+    showBanner('Negociación #'+BX24_DEAL_ID+' detectada automáticamente','green');
+    const wb=document.getElementById('webhookBlock');
+    if(wb) wb.style.display='none';
   }
 
   function initBX24() {
-    if (typeof BX24 === 'undefined') {
-      showBanner('⚠ BX24 no disponible (modo standalone)', '#ffab00');
+    if(typeof BX24==='undefined'){
+      showBanner('Modo standalone — introduce webhook e ID del deal','yellow');
       return;
     }
+    BX24.init(function(){
+      BX24_READY=true;
+      const wb=document.getElementById('webhookBlock');
+      if(wb) wb.style.display='none';
 
-    BX24.init(function() {
-      BX24_READY = true;
-
-      // Ocultar webhook siempre dentro de Bitrix
-      const webhookBlock = document.getElementById('webhookBlock');
-      if (webhookBlock) webhookBlock.style.display = 'none';
-
-      // 1) Intentar placement.info()
+      // 1) placement.info
       try {
-        const pl = BX24.placement.info();
-        const opts = (pl && pl.options) ? pl.options : {};
-        const idFromPlacement = opts.ID || opts.ENTITY_ID || opts.id || opts.dealId || null;
+        const pl=BX24.placement.info();
+        const opts=(pl&&pl.options)?pl.options:{};
+        const pid=opts.ID||opts.ENTITY_ID||opts.id||opts.dealId||null;
+        if(pid){applyDealId(pid);BX24.fitWindow();return;}
+      } catch(e){}
 
-        if (idFromPlacement) {
-          applyDealId(idFromPlacement);
-          BX24.fitWindow();
-          return;
+      // 2) crm.deal.current.get
+      BX24.callMethod('crm.deal.current.get',{},function(res){
+        if(!res.error()){
+          const d=res.data?res.data():null;
+          if(d&&d.ID){applyDealId(d.ID);BX24.fitWindow();return;}
         }
-      } catch(e) {}
-
-      // 2) Intentar crm.deal.current.get
-      BX24.callMethod('crm.deal.current.get', {}, function(res) {
-        if (!res.error() && res.data && res.data()) {
-          const deal = res.data();
-          if (deal && deal.ID) {
-            applyDealId(deal.ID);
-            BX24.fitWindow();
-            return;
-          }
-        }
-
-        // 3) Intentar leer ID de la URL padre via BX24.getOption
-        try {
-          const domain = BX24.getDomain();
-          // Mostrar diagnóstico útil
-          const pl = BX24.placement.info();
-          showBanner(`ℹ BX24 listo. Placement: ${JSON.stringify(pl).substring(0,80)}`, '#ffab00');
-        } catch(e) {}
-
+        showBanner('BX24 listo · Introduce el ID de la negociación manualmente','yellow');
         BX24.fitWindow();
       });
     });
   }
 
-  window.addEventListener('load', function() {
-    // Pequeño delay para asegurar que BX24 está inyectado
-    setTimeout(function() {
-      if (typeof BX24 !== 'undefined') {
-        initBX24();
-      } else {
-        showBanner('⚠ Ejecutándose fuera de Bitrix24 (modo standalone)', '#ffab00');
-      }
-    }, 300);
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      if(typeof BX24!=='undefined') initBX24();
+      else showBanner('Modo standalone — introduce webhook e ID del deal','yellow');
+    },400);
   });
 
-  // ========= CONFIG =========
-  const FIELDS = {
-    titular1: { nombre: 'UF_CRM_1746731416351', dni: 'UF_CRM_1740250548521' },
-    titular2: { nombre: 'UF_CRM_1746733312400', dni: 'UF_CRM_1746733431762' },
-    titular3: { nombre: 'UF_CRM_1764923270930', dni: 'UF_CRM_1764923331192' },
-  };
+  function pad(str,len){str=String(str||'');return str.length>=len?str.substring(0,len):str+' '.repeat(len-str.length);}
+  function padLeft(str,len,ch){ch=ch||'0';str=String(str||'');return str.length>=len?str.substring(0,len):ch.repeat(len-str.length)+str;}
+  function toUpper(str){return String(str||'').toUpperCase().replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E').replace(/[ÍÌÎÏ]/g,'I').replace(/[ÓÒÔÖ]/g,'O').replace(/[ÚÙÛÜ]/g,'U').replace(/[áàâä]/g,'A').replace(/[éèêë]/g,'E').replace(/[íìîï]/g,'I').replace(/[óòôö]/g,'O').replace(/[úùûü]/g,'U');}
+  function getToday(){const d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');}
+  function showError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('visible');setTimeout(()=>el.classList.remove('visible'),7000);}
+  function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
-  let currentMode = 'bitrix';
-  let loadedTitulares = [];
-  let generatedContent = '';
-  let generatedFilename = '';
-  let manualClientCount = 0;
-
-  // ========= UTILS =========
-  function pad(str, len) {
-    str = String(str || '');
-    if (str.length >= len) return str.substring(0, len);
-    return str + ' '.repeat(len - str.length);
-  }
-  function padLeft(str, len, ch = '0') {
-    str = String(str || '');
-    return str.length >= len ? str.substring(0, len) : ch.repeat(len - str.length) + str;
-  }
-  function toUpper(str) {
-    return String(str || '').toUpperCase()
-      .replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E').replace(/[ÍÌÎÏ]/g,'I')
-      .replace(/[ÓÒÔÖ]/g,'O').replace(/[ÚÙÛÜ]/g,'U')
-      .replace(/[áàâä]/g,'A').replace(/[éèêë]/g,'E').replace(/[íìîï]/g,'I')
-      .replace(/[óòôö]/g,'O').replace(/[úùûü]/g,'U');
-  }
-  function getToday() {
-    const d = new Date();
-    return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function showError(id, msg) {
-    const el = document.getElementById(id);
-    el.textContent = msg; el.classList.add('visible');
-    setTimeout(() => el.classList.remove('visible'), 6000);
-  }
-
-  // ========= MODO =========
-  function setMode(mode) {
-    currentMode = mode;
-    document.getElementById('tabBitrix').classList.toggle('active', mode === 'bitrix');
-    document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
-    document.getElementById('modeBitrix').style.display = mode === 'bitrix' ? 'block' : 'none';
-    document.getElementById('modeManual').classList.toggle('visible', mode === 'manual');
+  function setMode(mode){
+    currentMode=mode;
+    document.getElementById('tabBitrix').classList.toggle('active',mode==='bitrix');
+    document.getElementById('tabManual').classList.toggle('active',mode==='manual');
+    document.getElementById('modeBitrix').style.display=mode==='bitrix'?'block':'none';
+    document.getElementById('modeManual').classList.toggle('visible',mode==='manual');
     document.getElementById('previewSection').classList.remove('visible');
-    if (mode === 'manual' && manualClientCount === 0) addManualClient();
+    if(mode==='manual'&&manualClientCount===0) addManualClient();
   }
 
-  // ========= BITRIX =========
-  async function loadFromBitrix() {
-    const webhookUrl = document.getElementById('webhookUrl').value.trim();
-    const dealId = document.getElementById('dealId').value.trim();
+  function bx24Call(method,params){
+    return new Promise(function(resolve,reject){
+      BX24.callMethod(method,params,function(result){
+        if(result.error()) reject(new Error(String(result.error())));
+        else resolve(result.data());
+      });
+    });
+  }
 
-    if (!webhookUrl) return showError('bitrixError', 'Introduce primero la URL del webhook en la configuración.');
-    if (!dealId) return showError('bitrixError', 'Introduce el ID de la negociación.');
-
-    const loadingEl = document.getElementById('loadingMsg');
-    const btnLoad = document.getElementById('btnLoad');
+  async function loadFromBitrix(){
+    const dealId=document.getElementById('dealId').value.trim();
+    if(!dealId) return showError('bitrixError','Introduce el ID de la negociación.');
+    const loadingEl=document.getElementById('loadingMsg');
+    const btnLoad=document.getElementById('btnLoad');
     loadingEl.classList.add('visible');
-    btnLoad.disabled = true;
+    btnLoad.disabled=true;
     document.getElementById('bitrixError').classList.remove('visible');
-    document.getElementById('loadedData').innerHTML = '';
-
+    document.getElementById('loadedData').innerHTML='';
     try {
-      const url = `${webhookUrl.replace(/\/$/, '')}/crm.deal.get.json?id=${dealId}`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
-      const data = await resp.json();
-
-      if (data.error) throw new Error(data.error_description || data.error);
-      if (!data.result) throw new Error('Negociación no encontrada.');
-
-      const deal = data.result;
-      const dealTitle = deal.TITLE || `Negociación #${dealId}`;
-
-      // Extraer titulares
-      loadedTitulares = [];
-      const titularDefs = [
-        { label: '1ER TITULAR', ...FIELDS.titular1 },
-        { label: '2DO TITULAR', ...FIELDS.titular2 },
-        { label: '3ER TITULAR', ...FIELDS.titular3 },
+      let deal;
+      if(typeof BX24!=='undefined'&&BX24_READY){
+        deal=await bx24Call('crm.deal.get',{id:Number(dealId)});
+      } else {
+        const webhookUrl=document.getElementById('webhookUrl').value.trim();
+        if(!webhookUrl) throw new Error('Introduce la URL del webhook en el campo de configuración.');
+        const url=webhookUrl.replace(/\/$/,'')+'/crm.deal.get.json?id='+encodeURIComponent(dealId);
+        const resp=await fetch(url);
+        if(!resp.ok) throw new Error('Error HTTP '+resp.status);
+        const data=await resp.json();
+        if(data.error) throw new Error(data.error_description||data.error);
+        if(!data.result) throw new Error('Negociación no encontrada.');
+        deal=data.result;
+      }
+      const dealTitle=deal.TITLE||('Negociación #'+dealId);
+      loadedTitulares=[];
+      const titularDefs=[
+        {label:'1ER TITULAR',...FIELDS.titular1},
+        {label:'2DO TITULAR',...FIELDS.titular2},
+        {label:'3ER TITULAR',...FIELDS.titular3},
       ];
-
-      for (const t of titularDefs) {
-        const nombre = (deal[t.nombre] || '').trim();
-        const dni = (deal[t.dni] || '').trim();
-        if (nombre || dni) {
-          loadedTitulares.push({ label: t.label, nombre, dni });
-        }
+      for(const t of titularDefs){
+        const nombre=(deal[t.nombre]||'').trim();
+        const dni=(deal[t.dni]||'').trim();
+        if(nombre||dni) loadedTitulares.push({label:t.label,nombre,dni});
       }
-
-      if (loadedTitulares.length === 0) {
-        throw new Error('No se encontraron datos de titulares en esta negociación. Verifica que los campos "Nombre y apellido" y "DNI/NIE/PASAPORTE" estén rellenos.');
-      }
-
-      renderLoadedData(dealTitle, dealId);
-
-    } catch (err) {
-      showError('bitrixError', `Error: ${err.message}`);
+      if(loadedTitulares.length===0) throw new Error('No se encontraron titulares. Verifica que los campos nombre/DNI estén rellenos.');
+      renderLoadedData(dealTitle,dealId);
+    } catch(err){
+      showError('bitrixError','Error: '+err.message);
     } finally {
       loadingEl.classList.remove('visible');
-      btnLoad.disabled = false;
+      btnLoad.disabled=false;
     }
   }
 
-  function renderLoadedData(dealTitle, dealId) {
-    const container = document.getElementById('loadedData');
-    let html = `
-      <div style="margin-bottom:14px; padding: 10px 14px; background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.2); border-radius:6px; font-size:12px; color: var(--success);">
-        ✓ Negociación cargada: <strong>${dealTitle}</strong> (ID: ${dealId}) · ${loadedTitulares.length} titular(es) encontrado(s)
-      </div>
-    `;
-
-    loadedTitulares.forEach((t, i) => {
-      const nombreOk = t.nombre && t.nombre.length > 0;
-      const dniOk = t.dni && t.dni.length >= 9;
-      const status = nombreOk && dniOk
-        ? '<span class="status-ok">✓ Datos completos</span>'
-        : '<span class="status-warn">⚠ Datos incompletos — puedes editar abajo</span>';
-
-      html += `
-        <div class="loaded-card">
-          <div class="loaded-header">
-            <div class="loaded-header-left">
-              <span class="titular-badge">${t.label}</span>
-              ${status}
-            </div>
-          </div>
-          <div class="loaded-body">
-            <div class="data-grid">
-              <div class="data-item">
-                <label>Nombre y apellidos</label>
-                <input type="text" id="lt-nombre-${i}" value="${t.nombre}" 
-                  class="data-value ${!nombreOk ? 'editable' : ''}"
-                  style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;"
-                  oninput="updateLoadedTitular(${i})">
-              </div>
-              <div class="data-item">
-                <label>DNI / NIE / Pasaporte</label>
-                <input type="text" id="lt-dni-${i}" value="${t.dni}" maxlength="9"
-                  class="data-value ${!dniOk ? 'editable' : ''}"
-                  style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;text-transform:uppercase;"
-                  oninput="updateLoadedTitular(${i})">
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+  function renderLoadedData(dealTitle,dealId){
+    const container=document.getElementById('loadedData');
+    let html='<div style="margin-bottom:14px;padding:10px 14px;background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.2);border-radius:6px;font-size:12px;color:var(--success);">✓ Negociación: <strong>'+escapeHtml(dealTitle)+'</strong> (ID: '+dealId+') · '+loadedTitulares.length+' titular(es)</div>';
+    loadedTitulares.forEach(function(t,i){
+      const nOk=t.nombre&&t.nombre.length>0, dOk=t.dni&&t.dni.length>=9;
+      const status=nOk&&dOk?'<span class="status-ok">✓ Datos completos</span>':'<span class="status-warn">⚠ Datos incompletos</span>';
+      html+='<div class="loaded-card"><div class="loaded-header"><div class="loaded-header-left"><span class="titular-badge">'+t.label+'</span>'+status+'</div></div><div class="loaded-body"><div class="data-grid"><div><label style="font-size:10px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:3px;">Nombre y apellidos</label><input type="text" id="lt-nombre-'+i+'" value="'+escapeHtml(t.nombre)+'" class="data-value'+((!nOk)?' editable':'')+'" style="width:100%;" oninput="updateLoadedTitular('+i+')"></div><div><label style="font-size:10px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:3px;">DNI / NIE / Pasaporte</label><input type="text" id="lt-dni-'+i+'" value="'+escapeHtml(t.dni)+'" maxlength="9" class="data-value'+((!dOk)?' editable':'')+'" style="width:100%;text-transform:uppercase;" oninput="updateLoadedTitular('+i+')"></div></div></div></div>';
     });
-
-    container.innerHTML = html;
+    container.innerHTML=html;
   }
 
-  function updateLoadedTitular(i) {
-    loadedTitulares[i].nombre = document.getElementById(`lt-nombre-${i}`).value;
-    loadedTitulares[i].dni = document.getElementById(`lt-dni-${i}`).value;
+  function updateLoadedTitular(i){
+    loadedTitulares[i].nombre=(document.getElementById('lt-nombre-'+i)||{}).value||'';
+    loadedTitulares[i].dni=(document.getElementById('lt-dni-'+i)||{}).value||'';
   }
 
-  // ========= MANUAL =========
-  function addManualClient() {
-    const cards = document.querySelectorAll('.client-card');
-    if (cards.length >= 3) return;
+  function addManualClient(){
+    if(document.querySelectorAll('.client-card').length>=3) return;
     manualClientCount++;
-    const idx = manualClientCount;
-
-    const card = document.createElement('div');
-    card.className = 'client-card'; card.id = `mc-${idx}`;
-    card.innerHTML = `
-      <div class="client-header">
-        <div class="client-header-left">
-          <span class="client-index">TITULAR ${idx}</span>
-          <span class="client-preview" id="mcp-${idx}">Sin datos</span>
-        </div>
-        ${idx > 1 ? `<button class="btn-remove" onclick="removeManualClient(${idx})">Eliminar</button>` : ''}
-      </div>
-      <div class="client-body">
-        <div class="form-row">
-          <div class="field">
-            <label>DNI / NIE <span class="req">*</span></label>
-            <input type="text" id="mc-dni-${idx}" maxlength="9" placeholder="60992922G"
-              style="text-transform:uppercase" oninput="updateManualPreview(${idx})">
-            <span class="field-hint">9 caracteres sin espacios</span>
-          </div>
-          <div class="field">
-            <label>Nombre y apellidos <span class="req">*</span></label>
-            <input type="text" id="mc-nombre-${idx}" maxlength="90" placeholder="KELVIN ADRIAN MACHADO BRITO"
-              oninput="updateManualPreview(${idx})">
-            <span class="field-hint">Nombre completo tal como aparece en el DNI</span>
-          </div>
-        </div>
-      </div>
-    `;
+    const idx=manualClientCount;
+    const card=document.createElement('div');
+    card.className='client-card';card.id='mc-'+idx;
+    card.innerHTML='<div class="client-header"><div class="client-header-left"><span class="client-index">TITULAR '+idx+'</span><span class="client-preview" id="mcp-'+idx+'">Sin datos</span></div>'+(idx>1?'<button class="btn-remove" onclick="removeManualClient('+idx+')">Eliminar</button>':'')+'</div><div class="client-body"><div class="form-row"><div class="field"><label>DNI / NIE <span class="req">*</span></label><input type="text" id="mc-dni-'+idx+'" maxlength="9" placeholder="60992922G" style="text-transform:uppercase" oninput="updateManualPreview('+idx+')"><span class="field-hint">9 caracteres sin espacios</span></div><div class="field"><label>Nombre y apellidos <span class="req">*</span></label><input type="text" id="mc-nombre-'+idx+'" maxlength="90" placeholder="KELVIN ADRIAN MACHADO BRITO" oninput="updateManualPreview('+idx+')"></div></div></div>';
     document.getElementById('clientsContainer').appendChild(card);
-    updateAddBtn();
+    document.getElementById('btnAdd').disabled=document.querySelectorAll('.client-card').length>=3;
   }
 
-  function removeManualClient(idx) {
-    document.getElementById(`mc-${idx}`)?.remove();
-    updateAddBtn();
+  function removeManualClient(idx){
+    const el=document.getElementById('mc-'+idx);if(el)el.remove();
+    document.getElementById('btnAdd').disabled=document.querySelectorAll('.client-card').length>=3;
   }
 
-  function updateManualPreview(idx) {
-    const nombre = document.getElementById(`mc-nombre-${idx}`)?.value || '';
-    const preview = document.getElementById(`mcp-${idx}`);
-    if (preview) preview.textContent = nombre.toUpperCase() || 'Sin datos';
+  function updateManualPreview(idx){
+    const v=(document.getElementById('mc-nombre-'+idx)||{}).value||'';
+    const p=document.getElementById('mcp-'+idx);
+    if(p)p.textContent=v.toUpperCase()||'Sin datos';
   }
 
-  function updateAddBtn() {
-    const count = document.querySelectorAll('.client-card').length;
-    document.getElementById('btnAdd').disabled = count >= 3;
+  function parseName(fullName){
+    const parts=toUpper(fullName).trim().split(/\s+/).filter(Boolean);
+    if(parts.length===0)return{nombre:'',apellidos:''};
+    if(parts.length===1)return{nombre:parts[0],apellidos:parts[0]};
+    if(parts.length===2)return{nombre:parts[0],apellidos:parts[1]};
+    return{apellidos:parts.slice(-2).join(' '),nombre:parts.slice(0,-2).join(' ')};
   }
 
-  // ========= PARSE NOMBRE =========
-  // El campo "Nombre y apellido" puede venir como "KELVIN ADRIAN MACHADO BRITO"
-  // Para el registro A0002: apellidos (60) + nombre (30)
-  // Asumimos: últimas 2 palabras = apellidos, primeras = nombre
-  function parseName(fullName) {
-    const parts = toUpper(fullName).trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return { nombre: '', apellidos: '' };
-    if (parts.length === 1) return { nombre: parts[0], apellidos: parts[0] };
-    if (parts.length === 2) return { nombre: parts[0], apellidos: parts[1] };
-    // 3+ palabras: últimas 2 = apellidos, resto = nombre
-    const apellidos = parts.slice(-2).join(' ');
-    const nombre = parts.slice(0, -2).join(' ');
-    return { nombre, apellidos };
-  }
-
-  // ========= GENERATE =========
-  function generateFile() {
-    const codEntidad = toUpper(document.getElementById('codEntidad').value.trim());
-    const nombreEntidad = toUpper(document.getElementById('nombreEntidad').value.trim());
-
-    if (!codEntidad) return showError('errorMsg', 'El código REN es obligatorio.');
-    if (!nombreEntidad) return showError('errorMsg', 'El nombre de la entidad es obligatorio.');
-
-    let titulares = [];
-
-    if (currentMode === 'bitrix') {
-      if (loadedTitulares.length === 0) return showError('errorMsg', 'Primero carga los datos desde Bitrix24.');
-      for (let i = 0; i < loadedTitulares.length; i++) {
-        const t = loadedTitulares[i];
-        const dni = toUpper((document.getElementById(`lt-dni-${i}`)?.value || t.dni).trim());
-        const nombreCompleto = (document.getElementById(`lt-nombre-${i}`)?.value || t.nombre).trim();
-        if (!dni || dni.length !== 9) return showError('errorMsg', `El DNI del ${t.label} debe tener 9 caracteres.`);
-        if (!nombreCompleto) return showError('errorMsg', `El nombre del ${t.label} es obligatorio.`);
-        const { nombre, apellidos } = parseName(nombreCompleto);
-        titulares.push({ dni, nombre, apellidos });
+  function generateFile(){
+    const codEntidad=toUpper(document.getElementById('codEntidad').value.trim());
+    const nombreEntidad=toUpper(document.getElementById('nombreEntidad').value.trim());
+    if(!codEntidad)return showError('errorMsg','El código REN es obligatorio.');
+    if(!nombreEntidad)return showError('errorMsg','El nombre de la entidad es obligatorio.');
+    let titulares=[];
+    if(currentMode==='bitrix'){
+      if(loadedTitulares.length===0)return showError('errorMsg','Primero carga los datos desde Bitrix24.');
+      for(let i=0;i<loadedTitulares.length;i++){
+        const t=loadedTitulares[i];
+        const dni=toUpper(((document.getElementById('lt-dni-'+i)||{}).value||t.dni).trim());
+        const nc=((document.getElementById('lt-nombre-'+i)||{}).value||t.nombre).trim();
+        if(!dni||dni.length!==9)return showError('errorMsg','El DNI del '+t.label+' debe tener 9 caracteres.');
+        if(!nc)return showError('errorMsg','El nombre del '+t.label+' es obligatorio.');
+        titulares.push({...parseName(nc),dni});
       }
     } else {
-      const cards = document.querySelectorAll('.client-card');
-      if (cards.length === 0) return showError('errorMsg', 'Añade al menos un titular.');
-      for (const card of cards) {
-        const idx = card.id.split('-')[1];
-        const dni = toUpper((document.getElementById(`mc-dni-${idx}`)?.value || '').trim());
-        const nombreCompleto = (document.getElementById(`mc-nombre-${idx}`)?.value || '').trim();
-        if (!dni || dni.length !== 9) return showError('errorMsg', `El DNI del Titular ${idx} debe tener 9 caracteres.`);
-        if (!nombreCompleto) return showError('errorMsg', `El nombre del Titular ${idx} es obligatorio.`);
-        const { nombre, apellidos } = parseName(nombreCompleto);
-        titulares.push({ dni, nombre, apellidos });
+      const cards=document.querySelectorAll('.client-card');
+      if(cards.length===0)return showError('errorMsg','Añade al menos un titular.');
+      for(const card of cards){
+        const idx=card.id.split('-')[1];
+        const dni=toUpper(((document.getElementById('mc-dni-'+idx)||{}).value||'').trim());
+        const nc=((document.getElementById('mc-nombre-'+idx)||{}).value||'').trim();
+        if(!dni||dni.length!==9)return showError('errorMsg','El DNI del Titular '+idx+' debe tener 9 caracteres.');
+        if(!nc)return showError('errorMsg','El nombre del Titular '+idx+' es obligatorio.');
+        titulares.push({...parseName(nc),dni});
       }
     }
-
-    const TOTAL = 1000;
-    const today = getToday();
-    const codEnt4 = padLeft(codEntidad, 4, '0').substring(0, 4);
-    const refEnvio = today + '    ';
-
-    // AI000
-    let ai000 = 'AI000' + codEnt4 + pad('', 13) + pad(nombreEntidad, 50) + refEnvio;
-    ai000 = pad(ai000, TOTAL);
-
-    // A0000
-    const literal = 'LA PRESENTE PETICION DE INFORMACION SE REALIZA CUMPLIENDO EN SU TOTALIDAD LO ESTABLECIDO EN LA NORMA DECIMOSEXTA B DE LA CIRCULAR 1 2013 DEL BANCO DE ESPAÑA Y EN CONSECUENCIA DECLARO QUE A LA FECHA DE LA PRESENTE SOLICITUD OBRA ARCHIVADO EN ESTA ENTIDAD UN DOCUMENTO EN EL QUE CONSTA EL DERECHO DE ESTA ENTIDAD A SOLICITAR INFORMES A LA CIR SOBRE CADA UNO DE LOS TITULARES RELACIONADOS ASUMIENDOSE CUALQUIER TIPO DE RESPONSABILIDAD QUE PUDIERA EMANAR DEL INCUMPLIMIENTO DE ESTA DECLARACION';
-    let a0000 = 'A0000' + codEnt4 + pad(literal, 490);
-    a0000 = pad(a0000, TOTAL);
-
-    const a0002lines = titulares.map(t => {
-      const cit = 'ES' + t.dni;
-      let reg = 'A0002' + codEnt4 + cit + pad('', 11) + pad(t.apellidos, 60) + pad(t.nombre, 30) + pad('', 12);
-      return pad(reg, TOTAL);
-    });
-
-    const lines = [ai000, a0000, ...a0002lines];
-    generatedContent = lines.join('\r\n');
-
-    const hh = String(new Date().getHours()).padStart(2,'0');
-    const mm = String(new Date().getMinutes()).padStart(2,'0');
-    generatedFilename = `CIRITE_${today}_${hh}${mm}.txt`;
-
-    const previewEl = document.getElementById('previewBox');
-    previewEl.innerHTML = lines.map(line => {
-      const type = line.substring(0,5);
-      let cls = type === 'AI000' ? 'line-ai000' : type === 'A0000' ? 'line-a0000' : 'line-a0002';
-      return `<span class="${cls}">${line.substring(0,100)}…</span>`;
+    const TOTAL=1000, today=getToday();
+    const codEnt4=padLeft(codEntidad,4,'0').substring(0,4);
+    let ai000=pad('AI000'+codEnt4+pad('',13)+pad(nombreEntidad,50)+today+'    ',TOTAL);
+    const lit='LA PRESENTE PETICION DE INFORMACION SE REALIZA CUMPLIENDO EN SU TOTALIDAD LO ESTABLECIDO EN LA NORMA DECIMOSEXTA B DE LA CIRCULAR 1 2013 DEL BANCO DE ESPAÑA Y EN CONSECUENCIA DECLARO QUE A LA FECHA DE LA PRESENTE SOLICITUD OBRA ARCHIVADO EN ESTA ENTIDAD UN DOCUMENTO EN EL QUE CONSTA EL DERECHO DE ESTA ENTIDAD A SOLICITAR INFORMES A LA CIR SOBRE CADA UNO DE LOS TITULARES RELACIONADOS ASUMIENDOSE CUALQUIER TIPO DE RESPONSABILIDAD QUE PUDIERA EMANAR DEL INCUMPLIMIENTO DE ESTA DECLARACION';
+    let a0000=pad('A0000'+codEnt4+pad(lit,490),TOTAL);
+    const a0002lines=titulares.map(t=>pad('A0002'+codEnt4+'ES'+t.dni+pad('',11)+pad(t.apellidos,60)+pad(t.nombre,30)+pad('',12),TOTAL));
+    const lines=[ai000,a0000,...a0002lines];
+    generatedContent=lines.join('\r\n');
+    const hh=String(new Date().getHours()).padStart(2,'0'),mm=String(new Date().getMinutes()).padStart(2,'0');
+    generatedFilename='CIRITE_'+today+'_'+hh+mm+'.txt';
+    document.getElementById('previewBox').innerHTML=lines.map(l=>{
+      const t=l.substring(0,5);
+      const cls=t==='AI000'?'line-ai000':t==='A0000'?'line-a0000':'line-a0002';
+      return '<span class="'+cls+'">'+escapeHtml(l.substring(0,100))+'…</span>';
     }).join('\n');
-
     document.getElementById('previewSection').classList.add('visible');
-    document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('previewSection').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
-  function downloadFile() {
-    if (!generatedContent) return;
-    const blob = new Blob([generatedContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = generatedFilename; a.click();
+  function downloadFile(){
+    if(!generatedContent)return;
+    const blob=new Blob([generatedContent],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=generatedFilename;a.click();
     URL.revokeObjectURL(url);
   }
 
-  // Init
   setMode('bitrix');
 </script>
 </body>
