@@ -1,4 +1,7 @@
-<!doctype html>
+function getInstallHtml() {
+  const HANDLER_URL = "https://throbbing-sound-91ad.kelvinadrian-23.workers.dev/";
+
+  return `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -9,62 +12,93 @@
     body { font-family: Arial, sans-serif; padding: 24px; }
     .ok { color: #1a7f37; }
     .err { color: #b42318; }
-    code { background:#f4f4f4; padding:2px 6px; border-radius:4px; }
+    .muted { color:#666; }
+    pre { background:#0b1020; color:#cfe3ff; padding:12px; border-radius:8px; overflow:auto; }
   </style>
 </head>
 <body>
   <h2>Instalando “Solicitud CIRBE”…</h2>
-  <p id="status">Inicializando…</p>
+  <p id="status" class="muted">Inicializando…</p>
+  <pre id="debug" style="display:none;"></pre>
 
   <script>
-    // ✅ ESTE debe ser el handler que se abrirá dentro del Deal (TAB)
-    const HANDLER_URL = "https://throbbing-sound-91ad.kelvinadrian-23.workers.dev/";
+    const HANDLER_URL = "${HANDLER_URL}";
+    const statusEl = document.getElementById("status");
+    const debugEl  = document.getElementById("debug");
 
     function setStatus(msg, cls) {
-      const el = document.getElementById("status");
-      el.textContent = msg;
-      el.className = cls || "";
+      statusEl.textContent = msg;
+      statusEl.className = cls || "muted";
     }
-
-    function finishInstallOk(note) {
-      setStatus(note || "✅ Instalación completada. Puedes cerrar esta ventana.", "ok");
+    function showDebug(obj) {
+      debugEl.style.display = "block";
+      try { debugEl.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2); }
+      catch(e) { debugEl.textContent = String(obj); }
+    }
+    function finishOk(msg) {
+      setStatus(msg || "✅ Instalación completada. Puedes cerrar esta ventana.", "ok");
       try { BX24.installFinish(); } catch (e) {}
     }
-
-    function finishInstallError(err) {
-      console.error(err);
-      setStatus("❌ Error instalando: " + (err && err.error_description ? err.error_description : JSON.stringify(err)), "err");
+    function finishErr(msg, extra) {
+      setStatus("❌ " + msg, "err");
+      if (extra) showDebug(extra);
     }
 
-    BX24.init(function () {
-      // Intentamos bind de la pestaña del Deal
-      BX24.callMethod("placement.bind", {
-        PLACEMENT: "CRM_DEAL_TAB",
-        HANDLER: HANDLER_URL,
-        TITLE: "Solicitud CIRBE",
-        DESCRIPTION: "Generador CIRITE dentro del Deal"
-      }, function (res) {
+    function waitForBX24(timeoutMs = 12000) {
+      const start = Date.now();
+      setStatus("Cargando BX24…", "muted");
+      const timer = setInterval(() => {
+        if (window.BX24 && typeof window.BX24.init === "function") {
+          clearInterval(timer);
+          boot();
+          return;
+        }
+        if (Date.now() - start > timeoutMs) {
+          clearInterval(timer);
+          finishErr("BX24 no está disponible dentro del iframe (no cargó la librería).", {
+            hint: "Revisa consola (F12) por bloqueos de red/CSP.",
+            loadedBX24: !!window.BX24
+          });
+        }
+      }, 200);
+    }
 
-        // Si la llamada en sí “falló”:
-        if (res.error && res.error()) {
-          const err = res.error();
-          const desc = (err && (err.error_description || err.error)) ? (err.error_description || err.error) : "";
+    function boot() {
+      setStatus("BX24 cargado. Inicializando app…", "muted");
+      BX24.init(function () {
+        setStatus("Registrando pestaña en CRM (placement.bind)…", "muted");
 
-          // ✅ Caso típico: ya estaba creado → lo tratamos como éxito
-          if (String(desc).toLowerCase().includes("already binded")) {
-            finishInstallOk("ℹ️ La pestaña ya existía (“already binded”). Instalación marcada como correcta.");
+        // ✅ ESTE ES EL CAMBIO CLAVE:
+        BX24.callMethod("placement.bind", {
+          PLACEMENT: "CRM_DEAL_DETAIL_TAB",
+          HANDLER: HANDLER_URL,
+          TITLE: "Solicitud CIRBE",
+          DESCRIPTION: "Generador CIRITE dentro del Deal"
+        }, function (res) {
+
+          if (res.error && res.error()) {
+            const err = res.error();
+            const desc = (err && (err.error_description || err.error)) ? (err.error_description || err.error) : "";
+
+            if (String(desc).toLowerCase().includes("already binded")) {
+              finishOk("ℹ️ La pestaña ya existía (“already binded”). Instalación marcada como correcta.");
+              return;
+            }
+            if (String(desc).toLowerCase().includes("insufficient_scope")) {
+              finishErr("Permisos insuficientes: activa 'CRM' y 'Incorporación de aplicaciones (placement)'. Luego reinstala.", err);
+              return;
+            }
+            finishErr("Error en placement.bind", err);
             return;
           }
 
-          // Otros errores reales
-          finishInstallError(err);
-          return;
-        }
-
-        // Éxito normal
-        finishInstallOk("✅ Pestaña creada y app instalada. Puedes cerrar esta ventana.");
+          finishOk("✅ Pestaña creada/actualizada y app instalada. Puedes cerrar esta ventana.");
+        });
       });
-    });
+    }
+
+    waitForBX24();
   </script>
 </body>
-</html>
+</html>`;
+}
