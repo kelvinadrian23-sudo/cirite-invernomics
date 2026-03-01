@@ -93,6 +93,17 @@
   .section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
   @media(max-width:600px){.form-row,.form-row.triple{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}h1{font-size:22px}}
+
+  /* ── Botón envío BdE ── */
+  .btn-send-bde{padding:14px 36px;background:linear-gradient(135deg,#1a4a1a,#00e676);border:none;border-radius:8px;color:#000;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:8px;margin:16px auto 0;}
+  .btn-send-bde:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,230,118,0.3);}
+  .btn-send-bde:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .send-loading{display:none;align-items:center;gap:10px;color:var(--success);font-size:13px;padding:12px 16px;background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.2);border-radius:6px;margin-top:12px;justify-content:center;}
+  .send-loading.visible{display:flex;}
+  .send-result{display:none;border-radius:6px;padding:14px 18px;font-size:13px;margin-top:12px;text-align:center;}
+  .send-result.ok{background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);color:var(--success);display:block;}
+  .send-result.err{background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);color:var(--error);display:block;}
+  .ref-number{font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:4px;margin-top:8px;display:block;word-break:break-all;}
 </style>
 </head>
 <body>
@@ -166,10 +177,24 @@
       <button class="btn-download" onclick="downloadFile()">↓ Descargar .txt</button>
     </div>
     <div class="preview-box" id="previewBox"></div>
+
+    <!-- NUEVO: Botón envío al Banco de España -->
+    <button class="btn-send-bde" id="btnSendBde" onclick="sendToBde()">
+      🏦 Enviar al Banco de España
+    </button>
+    <div class="send-loading" id="sendLoading">
+      <div class="spinner" style="border-top-color:var(--success);border-color:rgba(0,230,118,0.3);"></div>
+      Enviando fichero al Banco de España...
+    </div>
+    <div class="send-result" id="sendResult"></div>
   </div>
 
 </div>
 <script>
+  // ── URL del servidor Railway ─────────────────────────────────────────────────
+  const RAILWAY_URL = 'https://itw-invernomics-production.up.railway.app';
+  const RAILWAY_API_KEY = 'Invernomics2024BdE!';
+
   const FIELDS = {
     titular1:{nombre:'UF_CRM_1746731416351',dni:'UF_CRM_1740250548521'},
     titular2:{nombre:'UF_CRM_1746733312400',dni:'UF_CRM_1746733431762'},
@@ -206,30 +231,25 @@
       const wb=document.getElementById('webhookBlock');
       if(wb) wb.style.display='none';
 
-      // 1) placement.info — captura el ID del deal desde el contexto del placement
       try {
         const pl=BX24.placement.info();
         const opts=(pl&&pl.options)?pl.options:{};
-        // Bitrix pasa el ID del deal como "ID" en las opciones del placement
         const pid=opts.ID||opts.ENTITY_ID||opts.id||opts.entityId||opts.dealId||null;
         if(pid){applyDealId(pid);BX24.fitWindow();return;}
       } catch(e){
         console.warn('placement.info error:',e);
       }
 
-      // 2) Leer el ID desde la URL del parent (por si está en la URL del deal)
       try {
         const parentUrl = document.referrer || window.location.href;
         const m = parentUrl.match(/deal\/details\/(\d+)/);
         if(m&&m[1]){applyDealId(m[1]);BX24.fitWindow();return;}
       } catch(e){}
 
-      // 3) Fallback: pedir al usuario que introduzca el ID manualmente
       showBanner('BX24 listo · Introduce el ID de la negociación manualmente','yellow');
       BX24.fitWindow();
     });
 
-    // Si BX24.init no dispara en 5 segundos, marcar como listo de todas formas
     setTimeout(function(){
       if(!BX24_READY && typeof BX24!=='undefined'){
         BX24_READY=true;
@@ -407,6 +427,10 @@
       const cls=t==='AI000'?'line-ai000':t==='A0000'?'line-a0000':'line-a0002';
       return '<span class="'+cls+'">'+escapeHtml(l.substring(0,100))+'…</span>';
     }).join('\n');
+    // Resetear estado de envío al generar nuevo fichero
+    document.getElementById('sendResult').className='send-result';
+    document.getElementById('sendResult').innerHTML='';
+    document.getElementById('btnSendBde').disabled=false;
     document.getElementById('previewSection').classList.add('visible');
     document.getElementById('previewSection').scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -418,6 +442,39 @@
     const a=document.createElement('a');
     a.href=url;a.download=generatedFilename;a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // ── Envío al Banco de España ─────────────────────────────────────────────────
+  async function sendToBde() {
+    if(!generatedContent) return;
+    const btn=document.getElementById('btnSendBde');
+    const loadingEl=document.getElementById('sendLoading');
+    const resultEl=document.getElementById('sendResult');
+    const dealId=document.getElementById('dealId').value.trim()||'manual';
+    btn.disabled=true;
+    loadingEl.classList.add('visible');
+    resultEl.className='send-result';
+    resultEl.innerHTML='';
+    try {
+      const resp=await fetch(RAILWAY_URL+'/enviar-cirite',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':RAILWAY_API_KEY},
+        body:JSON.stringify({nombreFichero:generatedFilename,contenido:generatedContent,dealId}),
+      });
+      const data=await resp.json();
+      if(data.ok){
+        resultEl.className='send-result ok';
+        resultEl.innerHTML='✅ Fichero enviado correctamente al Banco de España<span class="ref-number">Referencia: '+escapeHtml(data.referencia)+'</span>';
+      } else {
+        throw new Error(data.error||'Error desconocido');
+      }
+    } catch(err){
+      resultEl.className='send-result err';
+      resultEl.innerHTML='❌ Error al enviar: '+escapeHtml(err.message);
+      btn.disabled=false;
+    } finally {
+      loadingEl.classList.remove('visible');
+    }
   }
 
   setMode('bitrix');
