@@ -104,6 +104,8 @@
   .send-result.ok{background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);color:var(--success);display:block;}
   .send-result.err{background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);color:var(--error);display:block;}
   .ref-number{font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:4px;margin-top:8px;display:block;word-break:break-all;}
+  .btn-download-pdf{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 20px;background:rgba(0,230,118,0.12);border:1px solid var(--success);border-radius:6px;color:var(--success);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;}
+  .btn-download-pdf:hover{background:rgba(0,230,118,0.22);}
 </style>
 </head>
 <body>
@@ -464,7 +466,13 @@
       const data=await resp.json();
       if(data.ok){
         resultEl.className='send-result ok';
-        resultEl.innerHTML='✅ Fichero enviado correctamente al Banco de España<span class="ref-number">Referencia: '+escapeHtml(data.referencia)+'</span>';
+        let pdfBtn='';
+        if(data.pdfBase64){
+          const pdfUrl='data:application/pdf;base64,'+data.pdfBase64;
+          const fname='Comprobante_BdE_'+generatedFilename.replace('.txt','')+'.pdf';
+          pdfBtn='<a class="btn-download-pdf" href="'+pdfUrl+'" download="'+fname+'">📄 Descargar comprobante PDF</a>';
+        }
+        resultEl.innerHTML='✅ Fichero enviado correctamente al Banco de España<span class="ref-number">Referencia: '+escapeHtml(data.referencia)+'</span>'+pdfBtn;
       } else {
         throw new Error(data.error||'Error desconocido');
       }
