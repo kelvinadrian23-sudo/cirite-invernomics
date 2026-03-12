@@ -294,129 +294,117 @@ const NATURALEZA = { T11:'Titular directo', T19:'Garante / avalista', T22:'Compr
 const TIPO_PROD = { V32:'Crédito financiero', V55:'Aval financiero', V63:'Aval no financiero', V68:'Depósito', V74:'Derivado' };
 
 // ── CLASIFICADOR DE PRODUCTO ──────────────────────────────────────────────────
+// IMPORTANTE: El plazo del CIRBE es el tramo del contrato ORIGINAL declarado por el banco,
+// NO el plazo residual real. Un coche financiado a 5 años puede aparecer como >20a si el
+// banco usa el tramo del contrato marco. No usar el plazo para clasificar el producto.
 function clasificar(r) {
   const { tipoProd, plazo, garReal, cobReal, garPers, importes, solidario, naturaleza } = r;
   const disp  = importes.dispuesto  || 0;
   const dispo = importes.disponible || 0;
   const total = disp + dispo;
 
-  // Avalista / garante
+  // ── SOLIDARIO: siempre tiene 2+ partícipes, puede ser avalista o cotitular ──
+  if (solidario) {
+    return {
+      icon:'🤝', tipo:'solidario', color:'purple',
+      nombre:'Deuda solidaria / riesgo compartido',
+      pista:`Aparece como ${solidario==='T33'?'riesgo solidario':'riesgo colectivo'} con ${r.numPart} partícipes. El cliente puede ser cotitular o avalista de este préstamo. ⚠️ Verificar con el cliente si es titular principal o avalista — cambia cómo lo computa el banco al que presentes la operación.`,
+      docsPedir:['Contrato del préstamo para confirmar si es titular o avalista','Si es solo avalista: acreditar que el titular principal paga correctamente']
+    };
+  }
+
+  // ── GARANTE / AVALISTA (naturaleza T19) ──
   if (naturaleza === 'T19') {
     return {
       icon:'🛡️', tipo:'garante', color:'purple',
       nombre:'Riesgo como avalista / garante',
-      pista:'El cliente NO es el deudor principal. Es garante de la deuda de un tercero.',
-      docsPedir:['Contrato del préstamo donde consta como avalista','Acreditar que el titular principal está al corriente de pago']
+      pista:'El cliente figura como garante o avalista, NO como deudor principal. Computa en CIRBE pero no es su deuda directa.',
+      docsPedir:['Contrato donde consta como avalista','Acreditar que el titular principal está al corriente de pago']
     };
   }
 
-  // Avales prestados
+  // ── AVALES PRESTADOS ──
   if (tipoProd === 'V55') return {
     icon:'🛡️', tipo:'aval', color:'purple',
     nombre:'Aval financiero prestado',
-    pista:'El cliente ha prestado un aval financiero. Computa como riesgo pero no es deuda directa.',
+    pista:'El cliente ha prestado un aval financiero. Computa como riesgo pero no es deuda directa suya.',
     docsPedir:['Contrato de aval']
   };
   if (tipoProd === 'V63') return {
     icon:'📋', tipo:'aval', color:'purple',
     nombre:'Aval técnico / no financiero',
-    pista:'Aval de obra, importación u otro tipo técnico. Bajo riesgo financiero.',
+    pista:'Aval de obra, importación u otro tipo técnico. Riesgo financiero bajo.',
     docsPedir:[]
   };
 
-  // Hipoteca — G20 es el indicador más fiable
+  // ── HIPOTECA INMOBILIARIA — G20 es el único indicador fiable ──
   if (garReal === 'G20') {
-    const esCancelada = PLAZO_LARGO.includes(plazo) && disp < 1;
+    const esCancelada = disp < 1;
     if (esCancelada) return {
       icon:'🏠', tipo:'hipoteca_cancelada', color:'orange',
       nombre:'Hipoteca inmobiliaria',
-      pista:'Aparece con importe cero o residual. Posiblemente cancelada o vendida recientemente. El banco puede tardar hasta 1 mes en comunicar la baja a la CIR.',
+      pista:'Aparece con importe cero o residual. Posiblemente cancelada recientemente por venta o amortización. El banco puede tardar hasta 1 mes en comunicar la baja al BdE.',
       cancelada: true,
-      docsPedir:['Nota simple del Registro (confirma cancelación)','Certificado de cancelación del banco']
+      docsPedir:['Nota simple del Registro (confirma cancelación registral)','Certificado de cancelación del banco']
     };
     return {
       icon:'🏠', tipo:'hipoteca', color:'blue',
       nombre:'Hipoteca inmobiliaria',
-      pista:`Préstamo hipotecario con ${PLAZO[plazo]?.toLowerCase() || 'plazo '+plazo} de plazo residual.${cobReal==='E14'?' La garantía cubre la totalidad del inmueble.':''}`,
-      docsPedir:['Escritura hipoteca o última revisión de cuota','Certificado saldo pendiente','Justificante de que está al corriente de pago']
+      pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total del inmueble.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión.`,
+      docsPedir:['Escritura de hipoteca o último cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado']
     };
   }
 
-  // Probable hipoteca por garantía real atípica + plazo largo
-  if (garReal === 'G21' && PLAZO_LARGO.includes(plazo)) {
+  // ── G21: OTRA GARANTÍA REAL (vehículo, maquinaria, etc.) — NO es hipoteca ──
+  if (garReal === 'G21') {
     return {
-      icon:'🏠', tipo:'hipoteca_probable', color:'blue',
-      nombre:'Posible hipoteca (garantía real atípica)',
-      pista:`Crédito a largo plazo con otra garantía real. Puede ser hipoteca comercial, nave industrial, hipoteca naval u otro activo. Verificar con el cliente.${cobReal?(' Cobertura: '+(COBERTURA[cobReal]||cobReal)):''}`,
-      docsPedir:['Escritura del préstamo para confirmar naturaleza','Certificado saldo pendiente']
+      icon:'🚗', tipo:'garantia_real', color:'amber',
+      nombre:'Préstamo con garantía real (no hipotecaria)',
+      pista:`Crédito con garantía real sobre un activo (habitual en financiación de vehículos, maquinaria o leasing). ⚠️ El plazo que muestra el BdE (${PLAZO[plazo]||plazo}) corresponde al tramo del contrato original, no al plazo residual real. Verificar con el cliente qué activo financia y cuándo vence.${cobReal?' Cobertura: '+(COBERTURA[cobReal]||cobReal)+'.':''}`,
+      docsPedir:['Contrato del préstamo / financiación','Saldo pendiente actualizado','Confirmar fecha de vencimiento real']
     };
   }
 
-  // Tarjeta: tiene disponible, dispuesto pequeño o nulo, sin garantía real
-  if (garReal === 'G19' && dispo > 0 && (disp === 0 || (disp <= 5 && total <= 15))) {
-    return {
-      icon:'💳', tipo:'tarjeta', color:'amber',
-      nombre:'Tarjeta de crédito',
-      pista:`Límite: ${fmt(total)} €  ·  Utilizado: ${fmt(disp)} € (${total>0?Math.round(disp/total*100):0}%)  ·  Disponible: ${fmt(dispo)} €. Computa como riesgo el límite total aunque no esté dispuesto.`,
-      docsPedir:['Extracto tarjeta para verificar límite real','Si el banco al que vas a presentar lo requiere: cancelar o reducir límite']
-    };
-  }
-
-  // Línea de crédito: disponible relevante, dispuesto también significativo
-  if (garReal === 'G19' && dispo > 0 && disp > 5) {
-    return {
-      icon:'💳', tipo:'linea', color:'amber',
-      nombre:'Línea de crédito / cuenta crédito',
-      pista:`Límite total: ${fmt(total)} €  ·  Dispuesto: ${fmt(disp)} €  ·  Disponible: ${fmt(dispo)} €. Los bancos computan el límite total, no solo lo utilizado.`,
-      docsPedir:['Contrato línea de crédito','Extracto actualizado']
-    };
-  }
-
-  // Préstamo coche: plazo corto-medio, sin garantía, importe típico vehículo
-  if (garReal === 'G19' && PLAZO_CORTO.includes(plazo) && disp >= 3 && disp <= 60 && dispo === 0) {
-    return {
-      icon:'🚗', tipo:'coche', color:'amber',
-      nombre:'Probable préstamo vehículo / consumo',
-      pista:`Préstamo sin garantía a ${PLAZO[plazo]?.toLowerCase() || plazo}. Importe y plazo compatibles con financiación de vehículo o consumo.`,
-      docsPedir:['Contrato del préstamo','Recibo último pago','Saldo pendiente actualizado']
-    };
-  }
-
-  // Préstamo personal: sin garantía, plazo corto/medio
-  if (garReal === 'G19' && (PLAZO_CORTO.includes(plazo) || PLAZO_MEDIO.includes(plazo)) && dispo === 0) {
-    return {
-      icon:'💰', tipo:'personal', color:'amber',
-      nombre:'Préstamo personal / consumo',
-      pista:`Préstamo sin garantía real a ${PLAZO[plazo]?.toLowerCase() || plazo} de plazo residual.`,
-      docsPedir:['Contrato del préstamo','Recibo último pago','Saldo pendiente actualizado']
-    };
-  }
-
-  // Largo plazo sin garantía: préstamo promotor, empresarial no hipotecario, etc.
-  if (garReal === 'G19' && PLAZO_LARGO.includes(plazo) && dispo === 0) {
-    return {
-      icon:'🏢', tipo:'largo', color:'blue',
-      nombre:'Crédito largo plazo sin garantía real',
-      pista:`Crédito financiero sin garantía real a ${PLAZO[plazo]?.toLowerCase() || plazo}. Podría ser préstamo empresarial, préstamo promotor u operación a largo plazo no hipotecaria. Verificar naturaleza con el cliente.`,
-      docsPedir:['Contrato del préstamo','Confirmar si es deuda personal o empresarial']
-    };
-  }
-
-  // Garantía pignoraticia (depósito, valores)
+  // ── GARANTÍA PIGNORATICIA ──
   if (garReal === 'G13') {
     return {
       icon:'📊', tipo:'pignoracion', color:'cyan',
       nombre:'Préstamo con garantía pignoraticia',
-      pista:'Respaldado por depósito, cartera de valores u otro activo financiero pignorado. Riesgo real bajo si el activo está vinculado.',
+      pista:'Respaldado por depósito, cartera de valores u otro activo financiero pignorado. Riesgo bajo si el activo cubre el importe.',
       docsPedir:['Contrato','Extracto del activo pignorado']
     };
   }
 
+  // ── A PARTIR DE AQUÍ: G19 (sin garantía real) ──
+  // El plazo NO es fiable para clasificar — el banco puede declarar cualquier tramo.
+  // Usamos el disponible y el importe para distinguir tarjetas/líneas de préstamos.
+
+  // Tarjeta / línea de crédito: tiene crédito disponible
+  if (dispo > 0) {
+    const usoPct = total > 0 ? Math.round(disp/total*100) : 0;
+    if (total <= 12 || disp === 0) {
+      return {
+        icon:'💳', tipo:'tarjeta', color:'amber',
+        nombre:'Tarjeta de crédito',
+        pista:`Límite: ${fmt(total)} €  ·  Utilizado: ${fmt(disp)} € (${usoPct}%)  ·  Disponible: ${fmt(dispo)} €. ⚠️ Los bancos computan el límite total como riesgo, no solo lo utilizado. Si no se usa, valorar cancelarla antes de presentar la operación.`,
+        docsPedir:['Extracto de la tarjeta (límite y saldo actual)','Valorar cancelación o reducción de límite si no se usa']
+      };
+    }
+    return {
+      icon:'💳', tipo:'linea', color:'amber',
+      nombre:'Línea de crédito / póliza de crédito',
+      pista:`Límite: ${fmt(total)} €  ·  Dispuesto: ${fmt(disp)} €  ·  Disponible: ${fmt(dispo)} €. ⚠️ Los bancos computan el límite total, no solo lo utilizado.`,
+      docsPedir:['Contrato de la línea de crédito','Extracto actualizado']
+    };
+  }
+
+  // Préstamo sin garantía real y sin disponible — puede ser personal, coche, consumo, etc.
+  // NO asumimos el tipo por el plazo del BdE ya que no es fiable
   return {
-    icon:'❓', tipo:'otro', color:'gray',
-    nombre:'Crédito financiero',
-    pista:`${TIPO_PROD[tipoProd]||tipoProd} · Plazo: ${PLAZO[plazo]||plazo} · Garantía: ${GAR_REAL[garReal]||garReal}`,
-    docsPedir:['Contrato del préstamo']
+    icon:'💰', tipo:'personal', color:'amber',
+    nombre:'Préstamo personal / consumo',
+    pista:`Préstamo sin garantía real. ⚠️ El plazo que figura en el CIRBE (${PLAZO[plazo]||plazo}) es el tramo del contrato original declarado por el banco y puede no coincidir con el plazo real del préstamo. Verificar con el cliente el tipo de préstamo, importe y fecha de vencimiento real.`,
+    docsPedir:['Contrato del préstamo','Saldo pendiente actualizado','Último recibo pagado','Confirmar fecha de vencimiento real']
   };
 }
 
