@@ -15,6 +15,18 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+  /* NAV SUPERIOR */
+  .app-nav{position:sticky;top:0;z-index:200;background:rgba(10,14,26,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;}
+  .app-nav-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);opacity:.6;margin-right:16px;letter-spacing:.1em;text-transform:uppercase;padding:14px 0;}
+  .app-nav-tab{display:flex;align-items:center;gap:8px;padding:14px 20px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;}
+  .app-nav-tab:hover{color:var(--text);}
+  .app-nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .app-section{display:none;}
+  .app-section.active{display:block;}
+  .cirbe-frame-wrap{width:100%;height:calc(100vh - 49px);border:none;overflow:hidden;}
+  .cirbe-frame-wrap iframe{width:100%;height:100%;border:none;display:block;}
+
   .container{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:40px 24px 80px;}
   .header{margin-bottom:40px;border-bottom:1px solid var(--border);padding-bottom:28px;}
   .header-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:4px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;}
@@ -109,6 +121,17 @@
 </style>
 </head>
 <body>
+<nav class="app-nav">
+  <span class="app-nav-logo">Invernomics</span>
+  <button class="app-nav-tab active" id="tab-cirite" onclick="switchTab('cirite')">
+    <span class="tab-icon">📄</span> Generar CIRITE
+  </button>
+  <button class="app-nav-tab" id="tab-cirbe" onclick="switchTab('cirbe')">
+    <span class="tab-icon">🔍</span> Analizar CIRBE
+  </button>
+</nav>
+
+<div class="app-section active" id="sec-cirite">
 <div class="container">
 
   <div class="header">
@@ -492,5 +515,22 @@
 
   setMode('bitrix');
 </script>
+</div><!-- /sec-cirite -->
+
+<div class="app-section" id="sec-cirbe">
+  <div class="cirbe-frame-wrap">
+    <iframe src="https://cirite-invernomics.pages.dev/cirits-parser.html" title="Analizador CIRBE" allow="clipboard-write"></iframe>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.getElementById('sec-cirite').classList.toggle('active', tab === 'cirite');
+  document.getElementById('sec-cirbe').classList.toggle('active', tab === 'cirbe');
+  document.getElementById('tab-cirite').classList.toggle('active', tab === 'cirite');
+  document.getElementById('tab-cirbe').classList.toggle('active', tab === 'cirbe');
+}
+</script>
+
 </body>
 </html>
