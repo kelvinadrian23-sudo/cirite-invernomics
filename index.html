@@ -3,146 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CIRITE · Invernomics</title>
+<title>CIR · Invernomics</title>
 <script src="https://api.bitrix24.com/api/v1/"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-  :root {
-    --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;
-    --accent:#00d4ff;--accent2:#0066ff;--success:#00e676;--warning:#ffab00;
-    --error:#ff5252;--text:#e8edf5;--text2:#8a9bb5;--text3:#4a5568;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
 
-  /* NAV SUPERIOR */
-  .app-nav{position:sticky;top:0;z-index:200;background:rgba(10,14,26,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;}
-  .app-nav-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);opacity:.6;margin-right:16px;letter-spacing:.1em;text-transform:uppercase;padding:14px 0;}
-  .app-nav-tab{display:flex;align-items:center;gap:8px;padding:14px 20px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;}
-  .app-nav-tab:hover{color:var(--text);}
-  .app-nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-  .app-section{display:none;}
-  .app-section.active{display:block;}
-  .cirbe-frame-wrap{width:100%;height:calc(100vh - 49px);border:none;overflow:hidden;}
-  .cirbe-frame-wrap iframe{width:100%;height:100%;border:none;display:block;}
+:root {
+  --bg:#090c14; --surface:#0f1420; --surface2:#151c2e; --surface3:#1c2540;
+  --border:#1e2d4a; --border2:#263550;
+  --accent:#3b7eff; --accent-bg:rgba(59,126,255,.10); --accent-br:rgba(59,126,255,.30);
+  --green:#10b981; --green-bg:rgba(16,185,129,.08); --green-br:rgba(16,185,129,.25);
+  --amber:#f59e0b; --amber-bg:rgba(245,158,11,.08); --amber-br:rgba(245,158,11,.25);
+  --red:#ef4444; --red-bg:rgba(239,68,68,.08); --red-br:rgba(239,68,68,.25);
+  --text:#e2e8f5; --text2:#7a8faf; --text3:#3d5070;
+  --mono:'Geist Mono','IBM Plex Mono',monospace;
+  --sans:'Geist','IBM Plex Sans',sans-serif;
+  --r:8px; --rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
 
-  .container{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:40px 24px 80px;}
-  .header{margin-bottom:40px;border-bottom:1px solid var(--border);padding-bottom:28px;}
-  .header-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:4px;padding:4px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;}
-  .header-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-  h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;}
-  h1 span{color:var(--accent);}
-  .header-sub{color:var(--text2);font-size:13px;}
-  .config-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px;}
-  .config-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-  .config-title::before{content:'⚙';font-size:13px;color:var(--accent);}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-  .form-row.triple{grid-template-columns:1fr 1fr 1fr;}
-  .form-row:last-child{margin-bottom:0;}
-  .field{display:flex;flex-direction:column;gap:5px;}
-  label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);}
-  label .req{color:var(--accent);margin-left:2px;}
-  input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;transition:border-color .2s,box-shadow .2s;width:100%;}
-  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1);}
-  input::placeholder{color:var(--text3);font-family:'IBM Plex Sans',sans-serif;font-size:12px;}
-  .field-hint{font-size:11px;color:var(--text3);}
-  .mode-tabs{display:flex;gap:8px;margin-bottom:24px;}
-  .mode-tab{flex:1;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;}
-  .mode-tab.active{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent);}
-  .deal-input-row{display:flex;gap:10px;align-items:flex-end;}
-  .deal-input-row .field{flex:1;}
-  .btn-load{padding:9px 20px;background:rgba(0,212,255,0.15);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;height:38px;}
-  .btn-load:hover{background:rgba(0,212,255,0.25);}
-  .btn-load:disabled{opacity:.5;cursor:not-allowed;}
-  .loaded-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
-  .loaded-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);}
-  .loaded-header-left{display:flex;align-items:center;gap:10px;}
-  .titular-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);padding:2px 8px;border-radius:3px;}
-  .status-ok{color:var(--success);font-size:12px;}
-  .status-warn{color:var(--warning);font-size:12px;}
-  .loaded-body{padding:16px 18px;}
-  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .data-value{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;}
-  .data-value.editable{border-color:var(--warning);}
-  .manual-section{display:none;}
-  .manual-section.visible{display:block;}
-  .clients-container{display:flex;flex-direction:column;gap:12px;}
-  .client-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .client-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);}
-  .client-header-left{display:flex;align-items:center;gap:10px;}
-  .client-index{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);padding:2px 8px;border-radius:3px;}
-  .client-preview{font-size:12px;color:var(--text2);}
-  .btn-remove{background:none;border:1px solid var(--border);color:var(--text3);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
-  .btn-remove:hover{border-color:var(--error);color:var(--error);}
-  .client-body{padding:16px 18px;}
-  .btn-add{width:100%;padding:12px;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--text2);font-family:'IBM Plex Sans',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;}
-  .btn-add:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.05);}
-  .btn-add:disabled{opacity:.4;cursor:not-allowed;}
-  .generate-section{margin-top:32px;display:flex;flex-direction:column;align-items:center;gap:12px;}
-  .btn-generate{padding:14px 48px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:8px;color:#000;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .3s;}
-  .btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,0.3);}
-  .loading{display:none;align-items:center;gap:10px;color:var(--accent);font-size:13px;padding:12px 16px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:6px;}
-  .loading.visible{display:flex;}
-  .spinner{width:16px;height:16px;border:2px solid rgba(0,212,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .msg{display:none;border-radius:6px;padding:11px 15px;font-size:13px;}
-  .msg.visible{display:block;}
-  .msg.error{background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);color:var(--error);}
-  .preview-section{margin-top:28px;display:none;}
-  .preview-section.visible{display:block;}
-  .preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .preview-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--success);display:flex;align-items:center;gap:8px;}
-  .preview-box{background:#060a12;border:1px solid var(--border);border-radius:6px;padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);overflow-x:auto;white-space:pre;line-height:1.8;max-height:160px;overflow-y:auto;}
-  .line-ai000{color:#00d4ff;}.line-a0000{color:#4a5568;}.line-a0002{color:#00e676;}
-  .btn-download{padding:10px 28px;background:var(--surface2);border:1px solid var(--success);border-radius:6px;color:var(--success);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;}
-  .info-box{background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:20px;}
-  .info-box strong{color:var(--accent);}
-  #bx24Banner{display:none;align-items:center;gap:10px;padding:10px 16px;margin-bottom:16px;border-radius:6px;font-size:13px;}
-  #bx24Banner.green{background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.25);color:#00e676;}
-  #bx24Banner.yellow{background:rgba(255,171,0,0.07);border:1px solid rgba(255,171,0,0.25);color:#ffab00;}
-  .section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-  .section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
-  @media(max-width:600px){.form-row,.form-row.triple{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}h1{font-size:22px}}
+/* ── NAV ── */
+.app-nav{position:sticky;top:0;z-index:200;background:rgba(9,12,20,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;height:50px;}
+.nav-logo{font-family:var(--mono);font-size:11px;color:var(--accent);opacity:.75;margin-right:20px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;}
+.nav-tab{display:flex;align-items:center;gap:7px;padding:0 18px;height:50px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;border-top:none;border-left:none;border-right:none;background:none;white-space:nowrap;transition:color .15s,border-color .15s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.app-section{display:none;} .app-section.active{display:block;}
+.frame-wrap{width:100%;height:calc(100vh - 50px);}
+.frame-wrap iframe{width:100%;height:100%;border:none;display:block;}
 
-  /* ── Botón envío BdE ── */
-  .btn-send-bde{padding:14px 36px;background:linear-gradient(135deg,#1a4a1a,#00e676);border:none;border-radius:8px;color:#000;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:8px;margin:16px auto 0;}
-  .btn-send-bde:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,230,118,0.3);}
-  .btn-send-bde:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-  .send-loading{display:none;align-items:center;gap:10px;color:var(--success);font-size:13px;padding:12px 16px;background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.2);border-radius:6px;margin-top:12px;justify-content:center;}
-  .send-loading.visible{display:flex;}
-  .send-result{display:none;border-radius:6px;padding:14px 18px;font-size:13px;margin-top:12px;text-align:center;}
-  .send-result.ok{background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);color:var(--success);display:block;}
-  .send-result.err{background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);color:var(--error);display:block;}
-  .ref-number{font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:4px;margin-top:8px;display:block;word-break:break-all;}
-  .btn-download-pdf{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 20px;background:rgba(0,230,118,0.12);border:1px solid var(--success);border-radius:6px;color:var(--success);font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;}
-  .btn-download-pdf:hover{background:rgba(0,230,118,0.22);}
+/* ── LAYOUT ── */
+.wrap{max-width:880px;margin:0 auto;padding:36px 24px 80px;}
+
+/* ── HEADER ── */
+.page-header{margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+.page-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--accent-bg);border:1px solid var(--accent-br);border-radius:4px;padding:4px 12px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;}
+.page-eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.page-header h1{font-size:26px;font-weight:700;letter-spacing:-.03em;margin-bottom:5px;}
+.page-header h1 em{font-style:normal;color:var(--accent);}
+.page-header p{color:var(--text2);font-size:13px;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px;margin-bottom:16px;}
+.card-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.step-num{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent-br);width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ── FORM ── */
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.row.tri{grid-template-columns:1fr 1fr 1fr;}
+.row:last-child{margin-bottom:0;}
+.field{display:flex;flex-direction:column;gap:4px;}
+label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);}
+label .req{color:var(--accent);margin-left:2px;}
+input{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;width:100%;transition:border-color .15s,box-shadow .15s;}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+input::placeholder{color:var(--text3);font-family:var(--sans);font-size:12px;}
+.hint{font-size:11px;color:var(--text3);}
+
+/* ── MODE TABS ── */
+.mode-tabs{display:flex;gap:8px;margin-bottom:20px;}
+.mode-tab{flex:1;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;}
+.mode-tab.active{background:var(--accent-bg);border-color:var(--accent-br);color:var(--accent);}
+.mode-tab:hover:not(.active){border-color:var(--border2);color:var(--text);}
+
+/* ── INLINE ROW ── */
+.inline-row{display:flex;gap:10px;align-items:flex-end;}
+.inline-row .field{flex:1;}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.btn:hover{border-color:var(--border2);background:var(--surface3);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.btn-accent:hover{background:#2d6ef0;border-color:#2d6ef0;box-shadow:0 4px 16px rgba(59,126,255,.3);}
+.btn-green{background:var(--green-bg);border-color:var(--green-br);color:var(--green);font-weight:600;}
+.btn-green:hover{background:rgba(16,185,129,.15);}
+.btn-cta{padding:13px 44px;font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:var(--r);border:none;background:linear-gradient(135deg,#2d6ef0,var(--accent));color:#fff;cursor:pointer;transition:all .25s;}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,126,255,.35);}
+.btn-cta:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-cta-green{background:linear-gradient(135deg,#0d9f6e,var(--green));}
+.btn-cta-green:hover{box-shadow:0 8px 24px rgba(16,185,129,.3);}
+.btn-remove{background:none;border:1px solid var(--border);color:var(--text3);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans);}
+.btn-remove:hover{border-color:var(--red-br);color:var(--red);}
+.btn-add{width:100%;padding:12px;background:transparent;border:1px dashed var(--border);border-radius:var(--r);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-family:var(--sans);}
+.btn-add:hover{border-color:var(--accent-br);color:var(--accent);background:var(--accent-bg);}
+.btn-add:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── ALERTS / BANNERS ── */
+.banner{display:none;align-items:center;gap:10px;padding:11px 16px;margin-bottom:16px;border-radius:var(--r);font-size:13px;border:1px solid;}
+.banner.show{display:flex;}
+.banner.ok{background:var(--green-bg);border-color:var(--green-br);color:#6ee7b7;}
+.banner.warn{background:var(--amber-bg);border-color:var(--amber-br);color:#fcd34d;}
+.banner.err{background:var(--red-bg);border-color:var(--red-br);color:#fca5a5;}
+.banner.info{background:var(--accent-bg);border-color:var(--accent-br);color:#93c5fd;}
+
+/* ── TITULAR CARDS ── */
+.titular-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:10px;}
+.titular-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.titular-head-l{display:flex;align-items:center;gap:10px;}
+.tid-badge{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent-br);padding:2px 8px;border-radius:4px;}
+.ok-badge{font-size:11px;color:var(--green);}
+.warn-badge{font-size:11px;color:var(--amber);}
+.titular-body{padding:14px 16px;}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.data-val{font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:7px 10px;width:100%;}
+.data-val.editable{border-color:var(--amber-br);}
+
+/* ── PREVIEW ── */
+.preview-box{background:#050810;border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;font-family:var(--mono);font-size:11px;color:var(--text2);overflow-x:auto;white-space:pre;line-height:1.9;max-height:150px;overflow-y:auto;}
+.l-ai{color:var(--accent);}
+.l-a0{color:var(--text3);}
+.l-a2{color:var(--green);}
+
+/* ── SPINNER ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid var(--accent-bg);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+.spinner.green{border-color:var(--green-bg);border-top-color:var(--green);}
+
+/* ── MISC ── */
+.ref-num{font-family:var(--mono);font-size:12px;background:rgba(0,0,0,.3);padding:6px 12px;border-radius:4px;margin-top:8px;display:block;word-break:break-all;}
+.section-sep{height:1px;background:var(--border);margin:24px 0;}
+.manual-section{display:none;} .manual-section.visible{display:block;}
+.gen-section{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.preview-section{margin-top:24px;display:none;} .preview-section.visible{display:block;}
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.preview-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--green);display:flex;align-items:center;gap:8px;}
+.send-section{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.send-loading{display:none;align-items:center;gap:10px;color:var(--green);font-size:13px;padding:11px 16px;background:var(--green-bg);border:1px solid var(--green-br);border-radius:var(--r);}
+.send-loading.show{display:flex;}
+.send-result{display:none;border-radius:var(--r);padding:13px 16px;font-size:13px;margin-top:4px;text-align:center;}
+.send-result.ok{background:var(--green-bg);border:1px solid var(--green-br);color:#6ee7b7;display:block;}
+.send-result.err{background:var(--red-bg);border:1px solid var(--red-br);color:#fca5a5;display:block;}
+.info-box{background:var(--accent-bg);border:1px solid var(--accent-br);border-radius:var(--r);padding:11px 15px;font-size:12px;color:#93c5fd;line-height:1.6;margin-bottom:18px;}
+.info-box strong{color:var(--accent);}
+
+@media(max-width:600px){.row,.row.tri{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}h1{font-size:22px}}
 </style>
 </head>
 <body>
+
 <nav class="app-nav">
-  <span class="app-nav-logo">Invernomics</span>
-  <button class="app-nav-tab active" id="tab-cirite" onclick="switchTab('cirite')">
-    <span class="tab-icon">📄</span> Generar CIRITE
+  <span class="nav-logo">Invernomics</span>
+  <button class="nav-tab active" id="tab-cirite" onclick="switchTab('cirite')">
+    📄 Generar CIRITE
   </button>
-  <button class="app-nav-tab" id="tab-cirbe" onclick="switchTab('cirbe')">
-    <span class="tab-icon">🔍</span> Analizar CIRBE
+  <button class="nav-tab" id="tab-cirbe" onclick="switchTab('cirbe')">
+    🔍 Analizar CIRBE
   </button>
 </nav>
 
+<!-- ═══ SECCIÓN 1: GENERADOR CIRITE ═══ -->
 <div class="app-section active" id="sec-cirite">
-<div class="container">
+<div class="wrap">
 
-  <div class="header">
-    <div class="header-badge">Invernomics · CIR · Proceso CIRITE</div>
-    <h1>Generador <span>CIRITE</span></h1>
-    <p class="header-sub">Solicitud de informes CIRBE al Banco de España · Instrucción 1996.01 v16.3</p>
+  <div class="page-header">
+    <div class="page-eyebrow"><span class="dot"></span>Invernomics · CIR · E331</div>
+    <h1>Generador <em>CIRITE</em></h1>
+    <p>Solicitud de informes CIRBE al Banco de España · Instrucción 1996.01 v16.3</p>
   </div>
 
-  <div class="config-card">
-    <div class="config-title">Configuración</div>
-    <div class="form-row triple">
+  <!-- Config -->
+  <div class="card">
+    <div class="card-label">⚙ Configuración de entidad</div>
+    <div class="row tri">
       <div class="field">
         <label>Código REN <span class="req">*</span></label>
         <input type="text" id="codEntidad" value="E331" maxlength="4">
@@ -154,383 +180,333 @@
       <div class="field" id="webhookBlock">
         <label>URL Webhook Bitrix24</label>
         <input type="text" id="webhookUrl" placeholder="https://b24-xxx.bitrix24.es/rest/1/xxx/">
-        <span class="field-hint">Solo para pruebas fuera de Bitrix</span>
+        <span class="hint">Solo para pruebas fuera de Bitrix</span>
       </div>
     </div>
   </div>
 
-  <div id="bx24Banner"><span>⚡</span><span id="bx24Msg"></span></div>
+  <!-- Banner BX24 -->
+  <div class="banner info" id="bx24Banner"><span id="bx24Msg"></span></div>
 
-  <div class="section-label"><div class="section-num">01</div>Modo de introducción de datos</div>
+  <!-- Modo -->
+  <div class="card-label"><div class="step-num">01</div>Modo de introducción de datos</div>
   <div class="mode-tabs">
     <button class="mode-tab active" id="tabBitrix" onclick="setMode('bitrix')">🔗 Cargar desde Bitrix24</button>
     <button class="mode-tab" id="tabManual" onclick="setMode('manual')">✏️ Introducir manualmente</button>
   </div>
 
+  <!-- Bitrix mode -->
   <div id="modeBitrix">
-    <div class="info-box">
-      Introduce el <strong>ID de la negociación</strong> (número en la URL, ej: <strong>...crm/deal/details/123/</strong>) y los datos de los titulares se cargarán automáticamente.
-    </div>
-    <div class="deal-section" style="margin-bottom:20px;">
-      <div class="deal-input-row">
-        <div class="field">
-          <label>ID de Negociación Bitrix24 <span class="req">*</span></label>
-          <input type="number" id="dealId" placeholder="ej: 123" min="1">
-        </div>
-        <button class="btn-load" id="btnLoad" onclick="loadFromBitrix()">Cargar datos</button>
+    <div class="info-box">Introduce el <strong>ID de la negociación</strong> (número en la URL, ej: <strong>…crm/deal/details/123/</strong>) y los datos se cargarán automáticamente.</div>
+    <div class="inline-row" style="margin-bottom:16px;">
+      <div class="field">
+        <label>ID de negociación Bitrix24 <span class="req">*</span></label>
+        <input type="number" id="dealId" placeholder="ej: 123" min="1">
       </div>
+      <button class="btn btn-accent" id="btnLoad" onclick="loadFromBitrix()">Cargar datos</button>
     </div>
-    <div class="loading" id="loadingMsg"><div class="spinner"></div>Conectando con Bitrix24...</div>
-    <div class="msg error" id="bitrixError"></div>
+    <div class="banner info" id="loadingMsg" style="display:none;">
+      <div class="spinner"></div>Conectando con Bitrix24…
+    </div>
+    <div class="banner err" id="bitrixError"></div>
     <div id="loadedData"></div>
   </div>
 
+  <!-- Manual mode -->
   <div id="modeManual" class="manual-section">
-    <div class="section-label" style="margin-top:8px"><div class="section-num">02</div>Titulares a consultar</div>
-    <div class="clients-container" id="clientsContainer"></div>
+    <div class="card-label" style="margin-top:4px;"><div class="step-num">02</div>Titulares a consultar</div>
+    <div id="clientsContainer"></div>
     <button class="btn-add" id="btnAdd" onclick="addManualClient()">+ Añadir titular (máx. 3)</button>
   </div>
 
-  <div class="generate-section">
-    <button class="btn-generate" onclick="generateFile()">Generar fichero CIRITE</button>
-    <div class="msg error" id="errorMsg"></div>
+  <!-- Generar -->
+  <div class="gen-section">
+    <button class="btn-cta" onclick="generateFile()">Generar fichero CIRITE</button>
+    <div class="banner err" id="errorMsg"></div>
   </div>
 
+  <!-- Preview -->
   <div class="preview-section" id="previewSection">
     <div class="preview-header">
-      <div class="preview-title">Fichero generado correctamente</div>
-      <button class="btn-download" onclick="downloadFile()">↓ Descargar .txt</button>
+      <div class="preview-title">✓ Fichero generado correctamente</div>
+      <button class="btn btn-green" onclick="downloadFile()">↓ Descargar .txt</button>
     </div>
     <div class="preview-box" id="previewBox"></div>
-
-    <!-- NUEVO: Botón envío al Banco de España -->
-    <button class="btn-send-bde" id="btnSendBde" onclick="sendToBde()">
-      🏦 Enviar al Banco de España
-    </button>
-    <div class="send-loading" id="sendLoading">
-      <div class="spinner" style="border-top-color:var(--success);border-color:rgba(0,230,118,0.3);"></div>
-      Enviando fichero al Banco de España...
+    <div class="send-section">
+      <button class="btn-cta btn-cta-green" id="btnSendBde" onclick="sendToBde()">🏦 Enviar al Banco de España</button>
+      <div class="send-loading" id="sendLoading"><div class="spinner green"></div>Enviando al Banco de España…</div>
+      <div class="send-result" id="sendResult"></div>
     </div>
-    <div class="send-result" id="sendResult"></div>
   </div>
 
 </div>
-<script>
-  // ── URL del servidor Railway ─────────────────────────────────────────────────
-  const RAILWAY_URL = 'https://itw-invernomics-production.up.railway.app';
-  const RAILWAY_API_KEY = 'Invernomics2024BdE!';
-
-  const FIELDS = {
-    titular1:{nombre:'UF_CRM_1746731416351',dni:'UF_CRM_1740250548521'},
-    titular2:{nombre:'UF_CRM_1746733312400',dni:'UF_CRM_1746733431762'},
-    titular3:{nombre:'UF_CRM_1764923270930',dni:'UF_CRM_1764923331192'},
-  };
-
-  let currentMode='bitrix', loadedTitulares=[], generatedContent='', generatedFilename='', manualClientCount=0;
-  let BX24_DEAL_ID=null, BX24_READY=false;
-
-  function showBanner(msg, type) {
-    const el=document.getElementById('bx24Banner');
-    el.className = type==='yellow' ? 'yellow' : 'green';
-    el.style.display='flex';
-    document.getElementById('bx24Msg').textContent=msg;
-  }
-
-  function applyDealId(id) {
-    BX24_DEAL_ID=String(id);
-    const inp=document.getElementById('dealId');
-    if(inp) inp.value=BX24_DEAL_ID;
-    showBanner('Negociación #'+BX24_DEAL_ID+' detectada automáticamente','green');
-    const wb=document.getElementById('webhookBlock');
-    if(wb) wb.style.display='none';
-  }
-
-  function initBX24() {
-    if(typeof BX24==='undefined'){
-      showBanner('Modo standalone — introduce webhook e ID del deal','yellow');
-      return;
-    }
-    showBanner('Conectando con Bitrix24...','yellow');
-    BX24.init(function(){
-      BX24_READY=true;
-      const wb=document.getElementById('webhookBlock');
-      if(wb) wb.style.display='none';
-
-      try {
-        const pl=BX24.placement.info();
-        const opts=(pl&&pl.options)?pl.options:{};
-        const pid=opts.ID||opts.ENTITY_ID||opts.id||opts.entityId||opts.dealId||null;
-        if(pid){applyDealId(pid);BX24.fitWindow();return;}
-      } catch(e){
-        console.warn('placement.info error:',e);
-      }
-
-      try {
-        const parentUrl = document.referrer || window.location.href;
-        const m = parentUrl.match(/deal\/details\/(\d+)/);
-        if(m&&m[1]){applyDealId(m[1]);BX24.fitWindow();return;}
-      } catch(e){}
-
-      showBanner('BX24 listo · Introduce el ID de la negociación manualmente','yellow');
-      BX24.fitWindow();
-    });
-
-    setTimeout(function(){
-      if(!BX24_READY && typeof BX24!=='undefined'){
-        BX24_READY=true;
-        console.warn('BX24.init timeout — forzando BX24_READY=true');
-        showBanner('BX24 detectado (init lento) · Introduce el ID manualmente','yellow');
-      }
-    },5000);
-  }
-
-  window.addEventListener('load',function(){
-    setTimeout(function(){
-      if(typeof BX24!=='undefined') initBX24();
-      else showBanner('Modo standalone — introduce webhook e ID del deal','yellow');
-    },400);
-  });
-
-  function pad(str,len){str=String(str||'');return str.length>=len?str.substring(0,len):str+' '.repeat(len-str.length);}
-  function padLeft(str,len,ch){ch=ch||'0';str=String(str||'');return str.length>=len?str.substring(0,len):ch.repeat(len-str.length)+str;}
-  function toUpper(str){return String(str||'').toUpperCase().replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E').replace(/[ÍÌÎÏ]/g,'I').replace(/[ÓÒÔÖ]/g,'O').replace(/[ÚÙÛÜ]/g,'U').replace(/[áàâä]/g,'A').replace(/[éèêë]/g,'E').replace(/[íìîï]/g,'I').replace(/[óòôö]/g,'O').replace(/[úùûü]/g,'U');}
-  function getToday(){const d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');}
-  function showError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('visible');setTimeout(()=>el.classList.remove('visible'),7000);}
-  function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
-
-  function setMode(mode){
-    currentMode=mode;
-    document.getElementById('tabBitrix').classList.toggle('active',mode==='bitrix');
-    document.getElementById('tabManual').classList.toggle('active',mode==='manual');
-    document.getElementById('modeBitrix').style.display=mode==='bitrix'?'block':'none';
-    document.getElementById('modeManual').classList.toggle('visible',mode==='manual');
-    document.getElementById('previewSection').classList.remove('visible');
-    if(mode==='manual'&&manualClientCount===0) addManualClient();
-  }
-
-  function bx24Call(method,params){
-    return new Promise(function(resolve,reject){
-      BX24.callMethod(method,params,function(result){
-        if(result.error()) reject(new Error(String(result.error())));
-        else resolve(result.data());
-      });
-    });
-  }
-
-  async function loadFromBitrix(){
-    const dealId=document.getElementById('dealId').value.trim();
-    if(!dealId) return showError('bitrixError','Introduce el ID de la negociación.');
-    const loadingEl=document.getElementById('loadingMsg');
-    const btnLoad=document.getElementById('btnLoad');
-    loadingEl.classList.add('visible');
-    btnLoad.disabled=true;
-    document.getElementById('bitrixError').classList.remove('visible');
-    document.getElementById('loadedData').innerHTML='';
-    try {
-      let deal;
-      if(typeof BX24!=='undefined'){if(!BX24_READY){BX24_READY=true;const wb2=document.getElementById('webhookBlock');if(wb2)wb2.style.display='none';}
-        deal=await bx24Call('crm.deal.get',{id:Number(dealId)});
-      } else {
-        const webhookUrl=document.getElementById('webhookUrl').value.trim();
-        if(!webhookUrl) throw new Error('Introduce la URL del webhook en el campo de configuración.');
-        const url=webhookUrl.replace(/\/$/,'')+'/crm.deal.get.json?id='+encodeURIComponent(dealId);
-        const resp=await fetch(url);
-        if(!resp.ok) throw new Error('Error HTTP '+resp.status);
-        const data=await resp.json();
-        if(data.error) throw new Error(data.error_description||data.error);
-        if(!data.result) throw new Error('Negociación no encontrada.');
-        deal=data.result;
-      }
-      const dealTitle=deal.TITLE||('Negociación #'+dealId);
-      loadedTitulares=[];
-      const titularDefs=[
-        {label:'1ER TITULAR',...FIELDS.titular1},
-        {label:'2DO TITULAR',...FIELDS.titular2},
-        {label:'3ER TITULAR',...FIELDS.titular3},
-      ];
-      for(const t of titularDefs){
-        const nombre=(deal[t.nombre]||'').trim();
-        const dni=(deal[t.dni]||'').trim();
-        if(nombre||dni) loadedTitulares.push({label:t.label,nombre,dni});
-      }
-      if(loadedTitulares.length===0) throw new Error('No se encontraron titulares. Verifica que los campos nombre/DNI estén rellenos.');
-      renderLoadedData(dealTitle,dealId);
-    } catch(err){
-      showError('bitrixError','Error: '+err.message);
-    } finally {
-      loadingEl.classList.remove('visible');
-      btnLoad.disabled=false;
-    }
-  }
-
-  function renderLoadedData(dealTitle,dealId){
-    const container=document.getElementById('loadedData');
-    let html='<div style="margin-bottom:14px;padding:10px 14px;background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.2);border-radius:6px;font-size:12px;color:var(--success);">✓ Negociación: <strong>'+escapeHtml(dealTitle)+'</strong> (ID: '+dealId+') · '+loadedTitulares.length+' titular(es)</div>';
-    loadedTitulares.forEach(function(t,i){
-      const nOk=t.nombre&&t.nombre.length>0, dOk=t.dni&&t.dni.length>=9;
-      const status=nOk&&dOk?'<span class="status-ok">✓ Datos completos</span>':'<span class="status-warn">⚠ Datos incompletos</span>';
-      html+='<div class="loaded-card"><div class="loaded-header"><div class="loaded-header-left"><span class="titular-badge">'+t.label+'</span>'+status+'</div></div><div class="loaded-body"><div class="data-grid"><div><label style="font-size:10px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:3px;">Nombre y apellidos</label><input type="text" id="lt-nombre-'+i+'" value="'+escapeHtml(t.nombre)+'" class="data-value'+((!nOk)?' editable':'')+'" style="width:100%;" oninput="updateLoadedTitular('+i+')"></div><div><label style="font-size:10px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:3px;">DNI / NIE / Pasaporte</label><input type="text" id="lt-dni-'+i+'" value="'+escapeHtml(t.dni)+'" maxlength="9" class="data-value'+((!dOk)?' editable':'')+'" style="width:100%;text-transform:uppercase;" oninput="updateLoadedTitular('+i+')"></div></div></div></div>';
-    });
-    container.innerHTML=html;
-  }
-
-  function updateLoadedTitular(i){
-    loadedTitulares[i].nombre=(document.getElementById('lt-nombre-'+i)||{}).value||'';
-    loadedTitulares[i].dni=(document.getElementById('lt-dni-'+i)||{}).value||'';
-  }
-
-  function addManualClient(){
-    if(document.querySelectorAll('.client-card').length>=3) return;
-    manualClientCount++;
-    const idx=manualClientCount;
-    const card=document.createElement('div');
-    card.className='client-card';card.id='mc-'+idx;
-    card.innerHTML='<div class="client-header"><div class="client-header-left"><span class="client-index">TITULAR '+idx+'</span><span class="client-preview" id="mcp-'+idx+'">Sin datos</span></div>'+(idx>1?'<button class="btn-remove" onclick="removeManualClient('+idx+')">Eliminar</button>':'')+'</div><div class="client-body"><div class="form-row"><div class="field"><label>DNI / NIE <span class="req">*</span></label><input type="text" id="mc-dni-'+idx+'" maxlength="9" placeholder="60992922G" style="text-transform:uppercase" oninput="updateManualPreview('+idx+')"><span class="field-hint">9 caracteres sin espacios</span></div><div class="field"><label>Nombre y apellidos <span class="req">*</span></label><input type="text" id="mc-nombre-'+idx+'" maxlength="90" placeholder="KELVIN ADRIAN MACHADO BRITO" oninput="updateManualPreview('+idx+')"></div></div></div>';
-    document.getElementById('clientsContainer').appendChild(card);
-    document.getElementById('btnAdd').disabled=document.querySelectorAll('.client-card').length>=3;
-  }
-
-  function removeManualClient(idx){
-    const el=document.getElementById('mc-'+idx);if(el)el.remove();
-    document.getElementById('btnAdd').disabled=document.querySelectorAll('.client-card').length>=3;
-  }
-
-  function updateManualPreview(idx){
-    const v=(document.getElementById('mc-nombre-'+idx)||{}).value||'';
-    const p=document.getElementById('mcp-'+idx);
-    if(p)p.textContent=v.toUpperCase()||'Sin datos';
-  }
-
-  function parseName(fullName){
-    const parts=toUpper(fullName).trim().split(/\s+/).filter(Boolean);
-    if(parts.length===0)return{nombre:'',apellidos:''};
-    if(parts.length===1)return{nombre:parts[0],apellidos:parts[0]};
-    if(parts.length===2)return{nombre:parts[0],apellidos:parts[1]};
-    return{apellidos:parts.slice(-2).join(' '),nombre:parts.slice(0,-2).join(' ')};
-  }
-
-  function generateFile(){
-    const codEntidad=toUpper(document.getElementById('codEntidad').value.trim());
-    const nombreEntidad=toUpper(document.getElementById('nombreEntidad').value.trim());
-    if(!codEntidad)return showError('errorMsg','El código REN es obligatorio.');
-    if(!nombreEntidad)return showError('errorMsg','El nombre de la entidad es obligatorio.');
-    let titulares=[];
-    if(currentMode==='bitrix'){
-      if(loadedTitulares.length===0)return showError('errorMsg','Primero carga los datos desde Bitrix24.');
-      for(let i=0;i<loadedTitulares.length;i++){
-        const t=loadedTitulares[i];
-        const dni=toUpper(((document.getElementById('lt-dni-'+i)||{}).value||t.dni).trim());
-        const nc=((document.getElementById('lt-nombre-'+i)||{}).value||t.nombre).trim();
-        if(!dni||dni.length!==9)return showError('errorMsg','El DNI del '+t.label+' debe tener 9 caracteres.');
-        if(!nc)return showError('errorMsg','El nombre del '+t.label+' es obligatorio.');
-        titulares.push({...parseName(nc),dni});
-      }
-    } else {
-      const cards=document.querySelectorAll('.client-card');
-      if(cards.length===0)return showError('errorMsg','Añade al menos un titular.');
-      for(const card of cards){
-        const idx=card.id.split('-')[1];
-        const dni=toUpper(((document.getElementById('mc-dni-'+idx)||{}).value||'').trim());
-        const nc=((document.getElementById('mc-nombre-'+idx)||{}).value||'').trim();
-        if(!dni||dni.length!==9)return showError('errorMsg','El DNI del Titular '+idx+' debe tener 9 caracteres.');
-        if(!nc)return showError('errorMsg','El nombre del Titular '+idx+' es obligatorio.');
-        titulares.push({...parseName(nc),dni});
-      }
-    }
-    const TOTAL=1000, today=getToday();
-    const codEnt4=padLeft(codEntidad,4,'0').substring(0,4);
-    let ai000=pad('AI000'+codEnt4+pad('',13)+pad(nombreEntidad,50)+today+'    ',TOTAL);
-    const lit='LA PRESENTE PETICION DE INFORMACION SE REALIZA CUMPLIENDO EN SU TOTALIDAD LO ESTABLECIDO EN LA NORMA DECIMOSEXTA B DE LA CIRCULAR 1 2013 DEL BANCO DE ESPAÑA Y EN CONSECUENCIA DECLARO QUE A LA FECHA DE LA PRESENTE SOLICITUD OBRA ARCHIVADO EN ESTA ENTIDAD UN DOCUMENTO EN EL QUE CONSTA EL DERECHO DE ESTA ENTIDAD A SOLICITAR INFORMES A LA CIR SOBRE CADA UNO DE LOS TITULARES RELACIONADOS ASUMIENDOSE CUALQUIER TIPO DE RESPONSABILIDAD QUE PUDIERA EMANAR DEL INCUMPLIMIENTO DE ESTA DECLARACION';
-    let a0000=pad('A0000'+codEnt4+pad(lit,490),TOTAL);
-    const a0002lines=titulares.map(t=>pad('A0002'+codEnt4+'ES'+t.dni+pad('',11)+pad(t.apellidos,60)+pad(t.nombre,30)+pad('',12),TOTAL));
-    const lines=[ai000,a0000,...a0002lines];
-    generatedContent=lines.join('\r\n');
-    const hh=String(new Date().getHours()).padStart(2,'0'),mm=String(new Date().getMinutes()).padStart(2,'0');
-    generatedFilename='CIRITE_'+today+'_'+hh+mm+'.txt';
-    document.getElementById('previewBox').innerHTML=lines.map(l=>{
-      const t=l.substring(0,5);
-      const cls=t==='AI000'?'line-ai000':t==='A0000'?'line-a0000':'line-a0002';
-      return '<span class="'+cls+'">'+escapeHtml(l.substring(0,100))+'…</span>';
-    }).join('\n');
-    // Resetear estado de envío al generar nuevo fichero
-    document.getElementById('sendResult').className='send-result';
-    document.getElementById('sendResult').innerHTML='';
-    document.getElementById('btnSendBde').disabled=false;
-    document.getElementById('previewSection').classList.add('visible');
-    document.getElementById('previewSection').scrollIntoView({behavior:'smooth',block:'start'});
-  }
-
-  function downloadFile(){
-    if(!generatedContent)return;
-    // Codificar en ISO-8859-1 (requerido por BdE — la Ñ debe ser 1 byte \xD1)
-    const bytes = new Uint8Array(generatedContent.split('').map(c => {
-      const code = c.charCodeAt(0);
-      return code <= 255 ? code : 63; // fallback a '?' para chars no ISO-8859-1
-    }));
-    const blob=new Blob([bytes],{type:'text/plain;charset=iso-8859-1'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=generatedFilename;a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ── Envío al Banco de España ─────────────────────────────────────────────────
-  async function sendToBde() {
-    if(!generatedContent) return;
-    const btn=document.getElementById('btnSendBde');
-    const loadingEl=document.getElementById('sendLoading');
-    const resultEl=document.getElementById('sendResult');
-    const dealId=document.getElementById('dealId').value.trim()||'manual';
-    btn.disabled=true;
-    loadingEl.classList.add('visible');
-    resultEl.className='send-result';
-    resultEl.innerHTML='';
-    try {
-      const resp=await fetch(RAILWAY_URL+'/enviar-cirite',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':RAILWAY_API_KEY},
-        body:JSON.stringify({nombreFichero:generatedFilename,contenido:generatedContent,dealId,encoding:'iso-8859-1'}),
-      });
-      const data=await resp.json();
-      if(data.ok){
-        resultEl.className='send-result ok';
-        let pdfBtn='';
-        if(data.pdfBase64){
-          const pdfUrl='data:application/pdf;base64,'+data.pdfBase64;
-          const fname='Comprobante_BdE_'+generatedFilename.replace('.txt','')+'.pdf';
-          pdfBtn='<a class="btn-download-pdf" href="'+pdfUrl+'" download="'+fname+'">📄 Descargar comprobante PDF</a>';
-        }
-        resultEl.innerHTML='✅ Fichero enviado correctamente al Banco de España<span class="ref-number">Referencia: '+escapeHtml(data.referencia)+'</span>'+pdfBtn;
-      } else {
-        throw new Error(data.error||'Error desconocido');
-      }
-    } catch(err){
-      resultEl.className='send-result err';
-      resultEl.innerHTML='❌ Error al enviar: '+escapeHtml(err.message);
-      btn.disabled=false;
-    } finally {
-      loadingEl.classList.remove('visible');
-    }
-  }
-
-  setMode('bitrix');
-</script>
 </div><!-- /sec-cirite -->
 
+<!-- ═══ SECCIÓN 2: ANALIZADOR CIRBE ═══ -->
 <div class="app-section" id="sec-cirbe">
-  <div class="cirbe-frame-wrap">
+  <div class="frame-wrap">
     <iframe src="https://cirite-invernomics.pages.dev/cirits-parser.html" title="Analizador CIRBE" allow="clipboard-write"></iframe>
   </div>
 </div>
 
 <script>
-function switchTab(tab) {
-  document.getElementById('sec-cirite').classList.toggle('active', tab === 'cirite');
-  document.getElementById('sec-cirbe').classList.toggle('active', tab === 'cirbe');
-  document.getElementById('tab-cirite').classList.toggle('active', tab === 'cirite');
-  document.getElementById('tab-cirbe').classList.toggle('active', tab === 'cirbe');
-}
-</script>
+const RAILWAY_URL = 'https://itw-invernomics-production.up.railway.app';
+const RAILWAY_API_KEY = 'Invernomics2024BdE!';
+const FIELDS = {
+  titular1:{nombre:'UF_CRM_1746731416351',dni:'UF_CRM_1740250548521'},
+  titular2:{nombre:'UF_CRM_1746733312400',dni:'UF_CRM_1746733431762'},
+  titular3:{nombre:'UF_CRM_1764923270930',dni:'UF_CRM_1764923331192'},
+};
 
+let currentMode='bitrix', loadedTitulares=[], generatedContent='', generatedFilename='', manualClientCount=0;
+let BX24_DEAL_ID=null, BX24_READY=false;
+
+function switchTab(tab) {
+  document.getElementById('sec-cirite').classList.toggle('active', tab==='cirite');
+  document.getElementById('sec-cirbe').classList.toggle('active', tab==='cirbe');
+  document.getElementById('tab-cirite').classList.toggle('active', tab==='cirite');
+  document.getElementById('tab-cirbe').classList.toggle('active', tab==='cirbe');
+}
+
+function showBanner(msg, type) {
+  const el=document.getElementById('bx24Banner');
+  el.className='banner show '+type;
+  el.innerHTML='<span>'+escapeHtml(msg)+'</span>';
+}
+
+function applyDealId(id) {
+  BX24_DEAL_ID=String(id);
+  const inp=document.getElementById('dealId');
+  if(inp) inp.value=BX24_DEAL_ID;
+  showBanner('Negociación #'+BX24_DEAL_ID+' detectada automáticamente','ok');
+  const wb=document.getElementById('webhookBlock');
+  if(wb) wb.style.display='none';
+}
+
+function initBX24() {
+  if(typeof BX24==='undefined'){showBanner('Modo standalone — introduce webhook e ID del deal','warn');return;}
+  showBanner('Conectando con Bitrix24…','info');
+  BX24.init(function(){
+    BX24_READY=true;
+    const wb=document.getElementById('webhookBlock');
+    if(wb) wb.style.display='none';
+    try{const pl=BX24.placement.info();const opts=(pl&&pl.options)?pl.options:{};const pid=opts.ID||opts.ENTITY_ID||opts.id||opts.entityId||opts.dealId||null;if(pid){applyDealId(pid);BX24.fitWindow();return;}}catch(e){}
+    try{const m=(document.referrer||'').match(/deal\/details\/(\d+)/);if(m&&m[1]){applyDealId(m[1]);BX24.fitWindow();return;}}catch(e){}
+    showBanner('BX24 listo · Introduce el ID de la negociación','warn');
+    BX24.fitWindow();
+  });
+  setTimeout(function(){if(!BX24_READY&&typeof BX24!=='undefined'){BX24_READY=true;showBanner('BX24 detectado · Introduce el ID manualmente','warn');}},5000);
+}
+
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    if(typeof BX24!=='undefined') initBX24();
+    else showBanner('Modo standalone — introduce webhook e ID del deal','warn');
+  },400);
+});
+
+function pad(str,len){str=String(str||'');return str.length>=len?str.substring(0,len):str+' '.repeat(len-str.length);}
+function padLeft(str,len,ch){ch=ch||'0';str=String(str||'');return str.length>=len?str.substring(0,len):ch.repeat(len-str.length)+str;}
+function toUpper(str){return String(str||'').toUpperCase().replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E').replace(/[ÍÌÎÏ]/g,'I').replace(/[ÓÒÔÖ]/g,'O').replace(/[ÚÙÛÜ]/g,'U').replace(/[áàâä]/g,'A').replace(/[éèêë]/g,'E').replace(/[íìîï]/g,'I').replace(/[óòôö]/g,'O').replace(/[úùûü]/g,'U');}
+function getToday(){const d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');}
+function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function showErr(id,msg){const el=document.getElementById(id);el.innerHTML=escapeHtml(msg);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),7000);}
+
+function setMode(mode){
+  currentMode=mode;
+  document.getElementById('tabBitrix').classList.toggle('active',mode==='bitrix');
+  document.getElementById('tabManual').classList.toggle('active',mode==='manual');
+  document.getElementById('modeBitrix').style.display=mode==='bitrix'?'block':'none';
+  document.getElementById('modeManual').classList.toggle('visible',mode==='manual');
+  document.getElementById('previewSection').classList.remove('visible');
+  if(mode==='manual'&&manualClientCount===0) addManualClient();
+}
+
+function bx24Call(method,params){
+  return new Promise(function(resolve,reject){
+    BX24.callMethod(method,params,function(result){
+      if(result.error()) reject(new Error(String(result.error())));
+      else resolve(result.data());
+    });
+  });
+}
+
+async function loadFromBitrix(){
+  const dealId=document.getElementById('dealId').value.trim();
+  if(!dealId) return showErr('bitrixError','Introduce el ID de la negociación.');
+  const ldg=document.getElementById('loadingMsg');
+  const btn=document.getElementById('btnLoad');
+  ldg.style.display='flex'; btn.disabled=true;
+  document.getElementById('bitrixError').classList.remove('show');
+  document.getElementById('loadedData').innerHTML='';
+  try{
+    let deal;
+    if(typeof BX24!=='undefined'){
+      if(!BX24_READY){BX24_READY=true;document.getElementById('webhookBlock').style.display='none';}
+      deal=await bx24Call('crm.deal.get',{id:Number(dealId)});
+    } else {
+      const wu=document.getElementById('webhookUrl').value.trim();
+      if(!wu) throw new Error('Introduce la URL del webhook.');
+      const resp=await fetch(wu.replace(/\/$/,'')+'/crm.deal.get.json?id='+encodeURIComponent(dealId));
+      if(!resp.ok) throw new Error('Error HTTP '+resp.status);
+      const data=await resp.json();
+      if(data.error) throw new Error(data.error_description||data.error);
+      if(!data.result) throw new Error('Negociación no encontrada.');
+      deal=data.result;
+    }
+    const dealTitle=deal.TITLE||('Negociación #'+dealId);
+    loadedTitulares=[];
+    const defs=[{label:'1ER TITULAR',...FIELDS.titular1},{label:'2DO TITULAR',...FIELDS.titular2},{label:'3ER TITULAR',...FIELDS.titular3}];
+    for(const t of defs){const n=(deal[t.nombre]||'').trim();const d=(deal[t.dni]||'').trim();if(n||d)loadedTitulares.push({label:t.label,nombre:n,dni:d});}
+    if(loadedTitulares.length===0) throw new Error('No se encontraron titulares. Verifica que los campos nombre/DNI estén rellenos.');
+    renderLoadedData(dealTitle,dealId);
+  } catch(err){
+    showErr('bitrixError','Error: '+err.message);
+  } finally {
+    ldg.style.display='none'; btn.disabled=false;
+  }
+}
+
+function renderLoadedData(dealTitle,dealId){
+  const c=document.getElementById('loadedData');
+  let html='<div class="banner ok show" style="margin-bottom:14px;">✓ Negociación: <strong>'+escapeHtml(dealTitle)+'</strong> (ID: '+dealId+') · '+loadedTitulares.length+' titular(es)</div>';
+  loadedTitulares.forEach(function(t,i){
+    const nOk=!!t.nombre, dOk=t.dni&&t.dni.length>=9;
+    const st=nOk&&dOk?'<span class="ok-badge">✓ Completo</span>':'<span class="warn-badge">⚠ Incompleto</span>';
+    html+='<div class="titular-card"><div class="titular-head"><div class="titular-head-l"><span class="tid-badge">'+t.label+'</span>'+st+'</div></div><div class="titular-body"><div class="data-grid"><div><label>Nombre y apellidos</label><input type="text" id="lt-nombre-'+i+'" value="'+escapeHtml(t.nombre)+'" class="data-val'+((!nOk)?' editable':'')+'" oninput="updateLoadedTitular('+i+')"></div><div><label>DNI / NIE / Pasaporte</label><input type="text" id="lt-dni-'+i+'" value="'+escapeHtml(t.dni)+'" maxlength="9" class="data-val'+((!dOk)?' editable':'')+'" style="text-transform:uppercase" oninput="updateLoadedTitular('+i+')"></div></div></div></div>';
+  });
+  c.innerHTML=html;
+}
+
+function updateLoadedTitular(i){
+  loadedTitulares[i].nombre=(document.getElementById('lt-nombre-'+i)||{}).value||'';
+  loadedTitulares[i].dni=(document.getElementById('lt-dni-'+i)||{}).value||'';
+}
+
+function addManualClient(){
+  if(document.querySelectorAll('.titular-card').length>=3) return;
+  manualClientCount++;
+  const idx=manualClientCount;
+  const card=document.createElement('div');
+  card.className='titular-card'; card.id='mc-'+idx;
+  card.innerHTML='<div class="titular-head"><div class="titular-head-l"><span class="tid-badge">TITULAR '+idx+'</span><span class="warn-badge" id="mcp-'+idx+'">Sin datos</span></div>'+(idx>1?'<button class="btn-remove" onclick="removeManualClient('+idx+')">Eliminar</button>':'')+'</div><div class="titular-body"><div class="data-grid"><div class="field"><label>DNI / NIE <span class="req">*</span></label><input type="text" id="mc-dni-'+idx+'" maxlength="9" placeholder="60992922G" style="text-transform:uppercase" oninput="updateManualPreview('+idx+')"><span class="hint">9 caracteres sin espacios</span></div><div class="field"><label>Nombre y apellidos <span class="req">*</span></label><input type="text" id="mc-nombre-'+idx+'" maxlength="90" placeholder="APELLIDO1 APELLIDO2 NOMBRE" oninput="updateManualPreview('+idx+')"></div></div></div>';
+  document.getElementById('clientsContainer').appendChild(card);
+  document.getElementById('btnAdd').disabled=document.querySelectorAll('.titular-card').length>=3;
+}
+
+function removeManualClient(idx){
+  const el=document.getElementById('mc-'+idx);if(el)el.remove();
+  document.getElementById('btnAdd').disabled=document.querySelectorAll('.titular-card').length>=3;
+}
+
+function updateManualPreview(idx){
+  const v=(document.getElementById('mc-nombre-'+idx)||{}).value||'';
+  const p=document.getElementById('mcp-'+idx);
+  if(p){p.textContent=v.toUpperCase()||'Sin datos'; p.className=v?'ok-badge':'warn-badge';}
+}
+
+function parseName(fullName){
+  const parts=toUpper(fullName).trim().split(/\s+/).filter(Boolean);
+  if(parts.length===0)return{nombre:'',apellidos:''};
+  if(parts.length===1)return{nombre:parts[0],apellidos:parts[0]};
+  if(parts.length===2)return{nombre:parts[0],apellidos:parts[1]};
+  return{apellidos:parts.slice(-2).join(' '),nombre:parts.slice(0,-2).join(' ')};
+}
+
+function generateFile(){
+  const codEntidad=toUpper(document.getElementById('codEntidad').value.trim());
+  const nombreEntidad=toUpper(document.getElementById('nombreEntidad').value.trim());
+  if(!codEntidad) return showErr('errorMsg','El código REN es obligatorio.');
+  if(!nombreEntidad) return showErr('errorMsg','El nombre de la entidad es obligatorio.');
+  let titulares=[];
+  if(currentMode==='bitrix'){
+    if(loadedTitulares.length===0) return showErr('errorMsg','Primero carga los datos desde Bitrix24.');
+    for(let i=0;i<loadedTitulares.length;i++){
+      const t=loadedTitulares[i];
+      const dni=toUpper(((document.getElementById('lt-dni-'+i)||{}).value||t.dni).trim());
+      const nc=((document.getElementById('lt-nombre-'+i)||{}).value||t.nombre).trim();
+      if(!dni||dni.length!==9) return showErr('errorMsg','El DNI del '+t.label+' debe tener 9 caracteres.');
+      if(!nc) return showErr('errorMsg','El nombre del '+t.label+' es obligatorio.');
+      titulares.push({...parseName(nc),dni});
+    }
+  } else {
+    const cards=document.querySelectorAll('.titular-card');
+    if(cards.length===0) return showErr('errorMsg','Añade al menos un titular.');
+    for(const card of cards){
+      const idx=card.id.split('-')[1];
+      const dni=toUpper(((document.getElementById('mc-dni-'+idx)||{}).value||'').trim());
+      const nc=((document.getElementById('mc-nombre-'+idx)||{}).value||'').trim();
+      if(!dni||dni.length!==9) return showErr('errorMsg','El DNI del Titular '+idx+' debe tener 9 caracteres.');
+      if(!nc) return showErr('errorMsg','El nombre del Titular '+idx+' es obligatorio.');
+      titulares.push({...parseName(nc),dni});
+    }
+  }
+  const TOTAL=1000, today=getToday();
+  const codEnt4=padLeft(codEntidad,4,'0').substring(0,4);
+  let ai000=pad('AI000'+codEnt4+pad('',13)+pad(nombreEntidad,50)+today+'    ',TOTAL);
+  const lit='LA PRESENTE PETICION DE INFORMACION SE REALIZA CUMPLIENDO EN SU TOTALIDAD LO ESTABLECIDO EN LA NORMA DECIMOSEXTA B DE LA CIRCULAR 1 2013 DEL BANCO DE ESPAÑA Y EN CONSECUENCIA DECLARO QUE A LA FECHA DE LA PRESENTE SOLICITUD OBRA ARCHIVADO EN ESTA ENTIDAD UN DOCUMENTO EN EL QUE CONSTA EL DERECHO DE ESTA ENTIDAD A SOLICITAR INFORMES A LA CIR SOBRE CADA UNO DE LOS TITULARES RELACIONADOS ASUMIENDOSE CUALQUIER TIPO DE RESPONSABILIDAD QUE PUDIERA EMANAR DEL INCUMPLIMIENTO DE ESTA DECLARACION';
+  let a0000=pad('A0000'+codEnt4+pad(lit,490),TOTAL);
+  const a0002lines=titulares.map(t=>pad('A0002'+codEnt4+'ES'+t.dni+pad('',11)+pad(t.apellidos,60)+pad(t.nombre,30)+pad('',12),TOTAL));
+  const lines=[ai000,a0000,...a0002lines];
+  generatedContent=lines.join('\r\n');
+  const hh=String(new Date().getHours()).padStart(2,'0'),mm=String(new Date().getMinutes()).padStart(2,'0');
+  generatedFilename='CIRITE_'+today+'_'+hh+mm+'.txt';
+  document.getElementById('previewBox').innerHTML=lines.map(l=>{
+    const t=l.substring(0,5);
+    const cls=t==='AI000'?'l-ai':t==='A0000'?'l-a0':'l-a2';
+    return '<span class="'+cls+'">'+escapeHtml(l.substring(0,100))+'…</span>';
+  }).join('\n');
+  document.getElementById('sendResult').className='send-result';
+  document.getElementById('sendResult').innerHTML='';
+  document.getElementById('btnSendBde').disabled=false;
+  document.getElementById('previewSection').classList.add('visible');
+  document.getElementById('previewSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function downloadFile(){
+  if(!generatedContent) return;
+  const bytes=new Uint8Array(generatedContent.split('').map(c=>{const code=c.charCodeAt(0);return code<=255?code:63;}));
+  const blob=new Blob([bytes],{type:'text/plain;charset=iso-8859-1'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=generatedFilename;a.click();URL.revokeObjectURL(url);
+}
+
+async function sendToBde(){
+  if(!generatedContent) return;
+  const btn=document.getElementById('btnSendBde');
+  const ldg=document.getElementById('sendLoading');
+  const res=document.getElementById('sendResult');
+  const dealId=document.getElementById('dealId').value.trim()||'manual';
+  btn.disabled=true; ldg.classList.add('show');
+  res.className='send-result'; res.innerHTML='';
+  try{
+    const resp=await fetch(RAILWAY_URL+'/enviar-cirite',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':RAILWAY_API_KEY},
+      body:JSON.stringify({nombreFichero:generatedFilename,contenido:generatedContent,dealId,encoding:'iso-8859-1'}),
+    });
+    const data=await resp.json();
+    if(data.ok){
+      res.className='send-result ok';
+      let pdfBtn='';
+      if(data.pdfBase64){
+        const pdfUrl='data:application/pdf;base64,'+data.pdfBase64;
+        pdfBtn='<br><a style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 18px;background:var(--green-bg);border:1px solid var(--green-br);border-radius:6px;color:var(--green);font-size:13px;text-decoration:none;" href="'+pdfUrl+'" download="Comprobante_BdE_'+generatedFilename.replace('.txt','')+'.pdf">📄 Descargar comprobante PDF</a>';
+      }
+      res.innerHTML='✅ Fichero enviado correctamente<span class="ref-num">Referencia: '+escapeHtml(data.referencia)+'</span>'+pdfBtn;
+    } else {
+      throw new Error(data.error||'Error desconocido');
+    }
+  } catch(err){
+    res.className='send-result err';
+    res.innerHTML='❌ Error al enviar: '+escapeHtml(err.message);
+    btn.disabled=false;
+  } finally {
+    ldg.classList.remove('show');
+  }
+}
+
+setMode('bitrix');
+</script>
 </body>
 </html>
