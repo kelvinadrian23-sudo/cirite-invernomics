@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIRBE Analyzer · Invernomics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff !important; color: #111 !important; font-family: 'DM Sans', Arial, sans-serif; font-size: 11pt; margin: 0; padding: 0; }
+  header, .drop, #dropZone, .actions, .period-tabs, .check-box { display: none !important; }
+  main { max-width: 100%; padding: 0; margin: 0; }
+  #results { display: block !important; }
+
+  /* Cabecera del PDF */
+  #print-header { display: flex !important; }
+
+  /* Resetear fondos oscuros a blanco */
+  .entity-bar, .kpi, .titular-box, .titular-header, .prod-card,
+  .prod-card-top, .checklist, .checklist-header, .checklist-body,
+  .period-content, .alert, .no-risk, #print-legal { background: #fff !important; border-color: #ddd !important; }
+  .kpi::after { display: none; }
+  .prod-card { border-left: 4px solid #ccc !important; margin-bottom: 8pt; page-break-inside: avoid; }
+  .prod-card.has-incidencia { border-left-color: #e53935 !important; background: #fff8f8 !important; }
+  .prod-card.posible-cancelada { border-left-color: #f57c00 !important; background: #fff8f0 !important; }
+
+  /* Tipografía */
+  .kpi-lbl, .amt-lbl, .prod-desc, .check-text span, .entity-bar .sep { color: #666 !important; }
+  .kpi-val, .prod-name, .check-text strong, .titular-nif { color: #111 !important; }
+  .kpi-val.g, .amt-val.green { color: #1b7a3e !important; }
+  .kpi-val.r, .amt-val.red   { color: #c62828 !important; }
+  .kpi-val.a, .amt-val.amber { color: #b45309 !important; }
+  .kpi-val.b, .amt-val.blue  { color: #1565c0 !important; }
+  .kpi-val.gold, .entity-bar strong, .titular-nif { color: #92580a !important; }
+  .alert.ok    { background: #f0fdf4 !important; border-color: #bbf7d0 !important; color: #166534 !important; }
+  .alert.warn  { background: #fffbeb !important; border-color: #fde68a !important; color: #92400e !important; }
+  .alert.err   { background: #fef2f2 !important; border-color: #fecaca !important; color: #991b1b !important; }
+  .alert.info  { background: #eff6ff !important; border-color: #bfdbfe !important; color: #1e40af !important; }
+  .incid-banner { background: #fef2f2 !important; border-color: #fecaca !important; color: #991b1b !important; }
+  .cancel-banner { background: #fff7ed !important; border-color: #fed7aa !important; color: #92400e !important; }
+  .tag { background: #f3f4f6 !important; border-color: #d1d5db !important; color: #374151 !important; }
+  .tag.red { background: #fef2f2 !important; color: #991b1b !important; }
+
+  /* Importes */
+  .prod-amounts { flex-direction: column; gap: 4pt; }
+
+  /* Titular header */
+  .titular-header { background: #f8f9fa !important; }
+  .titular-total { color: #b45309 !important; }
+  .tb-ok { background: #dcfce7 !important; color: #166534 !important; }
+  .tb-warn { background: #fef9c3 !important; color: #854d0e !important; }
+  .tb-err { background: #fee2e2 !important; color: #991b1b !important; }
+
+  /* Checklist */
+  .check-item { border-bottom: 1px solid #eee !important; padding: 6pt 0; }
+  .priority-high .check-text strong::before { content: "🔴 "; }
+  .priority-med  .check-text strong::before { content: "🟡 "; }
+  .check-text span { display: block; color: #666 !important; font-size: 9pt; }
+  #print-legal { display: block !important; background: #f8f9fa !important; border: 1px solid #e5e7eb !important; border-radius: 6pt; padding: 10pt 14pt; margin-top: 16pt; font-size: 8pt; color: #6b7280 !important; }
+
+  /* KPI row impresión */
+  .kpi-row { grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+  .kpi { border: 1px solid #e5e7eb !important; border-radius: 6pt; padding: 10pt; }
+
+  /* Saltos de página */
+  .sec { page-break-inside: avoid; }
+  .titular-box { page-break-inside: avoid; margin-bottom: 12pt; }
+}
+</style>
+<style>
+:root {
+  --bg:#0e0f13; --surface:#16181f; --surface2:#1e2028; --border:#2a2d38;
+  --accent:#e8a020; --blue:#3b82f6; --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+  --purple:#a855f7; --cyan:#06b6d4; --orange:#f97316;
+  --text:#e8eaf0; --muted:#6b7280;
+  --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif; --display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;padding-bottom:80px}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:10px;background:rgba(232,160,32,.15);color:var(--accent);border:1px solid rgba(232,160,32,.3);padding:3px 8px;border-radius:4px;letter-spacing:1px;text-transform:uppercase}
+header .sp{flex:1}
+
+main{max-width:980px;margin:0 auto;padding:28px 20px}
+
+/* DROP */
+.drop{border:2px dashed var(--border);border-radius:14px;padding:52px 28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);position:relative;overflow:hidden}
+.drop::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(232,160,32,.06) 0%,transparent 70%);pointer-events:none}
+.drop:hover,.drop.over{border-color:var(--accent);background:#1a1c24}
+.drop input{display:none}
+.drop-icon{font-size:40px;margin-bottom:12px;display:block}
+.drop-title{font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:6px}
+.drop-sub{color:var(--muted);font-size:12px;font-family:var(--mono)}
+
+#results{display:none;margin-top:28px}
+
+/* CABECERA ENTIDAD */
+.entity-bar{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;font-size:13px;}
+.entity-bar strong{color:var(--accent);font-family:var(--mono)}
+.entity-bar .sep{color:var(--border)}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:2px}
+.kpi.g::after{background:var(--green)} .kpi.r::after{background:var(--red)}
+.kpi.a::after{background:var(--amber)} .kpi.b::after{background:var(--blue)}
+.kpi.gold::after{background:var(--accent)} .kpi.p::after{background:var(--purple)}
+.kpi-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-family:var(--mono);margin-bottom:6px}
+.kpi-val{font-family:var(--display);font-size:22px;font-weight:800;line-height:1}
+.kpi-val.g{color:var(--green)} .kpi-val.r{color:var(--red)} .kpi-val.a{color:var(--amber)}
+.kpi-val.b{color:var(--blue)} .kpi-val.gold{color:var(--accent)} .kpi-val.p{color:var(--purple)}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ALERTS */
+.alert{border-radius:9px;padding:11px 15px;margin-bottom:12px;font-size:13px;display:flex;align-items:flex-start;gap:10px;border:1px solid;line-height:1.5}
+.alert.ok{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2);color:#86efac}
+.alert.warn{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2);color:#fcd34d}
+.alert.err{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.2);color:#fca5a5}
+.alert.info{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.2);color:#93c5fd}
+.alert.orange{background:rgba(249,115,22,.07);border-color:rgba(249,115,22,.2);color:#fdba74}
+.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.alert strong{font-weight:600;display:block;margin-bottom:2px}
+
+/* SEC TITLE */
+.sec{margin-bottom:24px}
+.sec-title{font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* TITULAR */
+.titular-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.titular-header{padding:13px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.titular-nif{font-family:var(--mono);font-size:13px;color:var(--accent);background:rgba(232,160,32,.1);border:1px solid rgba(232,160,32,.2);padding:3px 10px;border-radius:5px}
+.titular-total{font-family:var(--mono);font-size:13px;font-weight:600;margin-left:auto}
+.titular-badge{font-size:11px;padding:3px 10px;border-radius:4px;font-weight:600}
+.tb-ok{background:rgba(34,197,94,.15);color:var(--green)}
+.tb-warn{background:rgba(245,158,11,.15);color:var(--amber)}
+.tb-err{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* PERIOD TABS */
+.period-tabs{display:flex;gap:6px;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap}
+.ptab{font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:5px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s}
+.ptab.active{background:rgba(232,160,32,.15);border-color:rgba(232,160,32,.4);color:var(--accent)}
+.period-content{padding:16px 18px;display:none}
+.period-content.visible{display:block}
+
+/* PRODUCT CARDS */
+.prod-grid{display:flex;flex-direction:column;gap:10px}
+
+.prod-card{border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface2);transition:border-color .15s}
+.prod-card:hover{border-color:#3a3f55}
+.prod-card.has-incidencia{border-color:rgba(239,68,68,.4)!important}
+.prod-card.posible-cancelada{border-color:rgba(249,115,22,.3)}
+
+.prod-card-top{padding:14px 16px;display:flex;align-items:flex-start;gap:14px}
+.prod-icon{font-size:24px;flex-shrink:0;width:44px;height:44px;background:var(--bg);border-radius:9px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.prod-info{flex:1;min-width:0}
+.prod-name{font-weight:600;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prod-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+.prod-amounts{display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0;text-align:right}
+.amt-block{display:flex;flex-direction:column;align-items:flex-end}
+.amt-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-family:var(--mono)}
+.amt-val{font-family:var(--display);font-size:18px;font-weight:800;line-height:1}
+.amt-val.amber{color:var(--amber)} .amt-val.blue{color:var(--blue)}
+.amt-val.red{color:var(--red)} .amt-val.green{color:var(--green)} .amt-val.muted{color:var(--muted)}
+
+/* BAR */
+.credit-bar-wrap{padding:0 16px 14px;display:none}
+.credit-bar-wrap.show{display:block}
+.bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:5px}
+.bar-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .4s ease}
+.bar-fill.warn{background:linear-gradient(90deg,var(--amber),var(--orange))}
+.bar-fill.danger{background:linear-gradient(90deg,var(--red),#ff6b6b)}
+
+/* INCIDENCIA BANNER */
+.incid-banner{margin:0 12px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:9px 12px;font-size:12px;color:#fca5a5;display:flex;gap:8px;align-items:flex-start}
+
+/* CANCELADA BANNER */
+.cancel-banner{margin:0 12px 12px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:7px;padding:9px 12px;font-size:12px;color:#fdba74;display:flex;gap:8px;align-items:flex-start}
+
+/* TAGS */
+.prod-tags{padding:0 16px 12px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid}
+.tag.blue{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd}
+.tag.amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#fcd34d}
+.tag.gray{background:rgba(107,114,128,.1);border-color:rgba(107,114,128,.3);color:var(--muted)}
+.tag.cyan{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);color:#67e8f9}
+.tag.red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.tag.green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#86efac}
+.tag.orange{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#fdba74}
+.tag.purple{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#d8b4fe}
+
+/* SIN RIESGO */
+.no-risk{padding:20px;text-align:center;color:var(--green);font-size:13px;font-weight:600}
+
+/* CHECKLIST ASESOR */
+.checklist{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.checklist-header{padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--display);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.checklist-body{padding:16px 18px}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5}
+.check-item:last-child{border-bottom:none}
+.check-box{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:11px}
+.check-box:hover{border-color:var(--accent)}
+.check-box.checked{background:var(--green);border-color:var(--green);color:var(--bg)}
+.check-text{flex:1}
+.check-text strong{font-weight:600;color:var(--text)}
+.check-text span{color:var(--muted)}
+.priority-high .check-box{border-color:rgba(239,68,68,.5)}
+.priority-med .check-box{border-color:rgba(245,158,11,.4)}
+
+/* COMPARISON */
+.comparison-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.comp-col{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.comp-per{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.comp-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.comp-row .c-prod{color:var(--muted)}
+.comp-row .c-val{font-family:var(--mono);font-weight:600}
+.comp-delta{font-size:11px;font-family:var(--mono);padding:2px 6px;border-radius:3px;margin-left:6px}
+.delta-up{background:rgba(239,68,68,.15);color:var(--red)}
+.delta-down{background:rgba(34,197,94,.15);color:var(--green)}
+.delta-eq{background:rgba(107,114,128,.1);color:var(--muted)}
+
+/* ACTIONS */
+.actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn:hover{border-color:var(--muted);background:var(--surface)}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{background:#d4911c}
+.btn.danger{background:transparent;border-color:rgba(239,68,68,.4);color:var(--red)}
+.btn.danger:hover{background:rgba(239,68,68,.1)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">INVERNOMICS <span>/ CIRBE</span></div>
+  <div class="badge">Analizador CIRITS</div>
+  <div class="sp"></div>
+  <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Datos locales · No se envía nada</span>
+</header>
+
+<!-- Cabecera visible solo al imprimir -->
+<div id="print-header" style="display:none; justify-content:space-between; align-items:flex-start; padding: 0 0 12pt 0; border-bottom: 2px solid #92580a; margin-bottom: 16pt;">
+  <div>
+    <div style="font-size:18pt;font-weight:800;color:#92580a;letter-spacing:-0.5px;">INVERNOMICS</div>
+    <div style="font-size:8pt;color:#666;margin-top:2pt;">Broker de crédito hipotecario · Registro BdE E331</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:13pt;font-weight:700;color:#111;">Informe de Riesgos CIRBE</div>
+    <div id="print-fecha" style="font-size:8pt;color:#666;margin-top:3pt;"></div>
+  </div>
+</div>
+
+<main>
+  <div class="drop" id="dropZone">
+    <input type="file" id="fileInput" accept=".txt,.TXT">
+    <span class="drop-icon">📂</span>
+    <div class="drop-title">Arrastra el fichero CIRITS aquí</div>
+    <div class="drop-sub">CIRITS-EE331_*.TXT · Formato BdE · Procesado localmente</div>
+  </div>
+
+  <div id="results"></div>
+</main>
+
+<script>
+// ── DICCIONARIOS ──────────────────────────────────────────────────────────────
+const PLAZO = {
+  L01:'< 3 meses', L02:'3–6 meses', L03:'6–12 meses',
+  L04:'1–2 años', L05:'2–3 años', L06:'3–5 años',
+  L07:'5–10 años', L08:'10–15 años', L09:'15–20 años',
+  L10:'> 20 años', L11:'Plazo indeterminado'
+};
+const PLAZO_CORTO  = ['L01','L02','L03','L04','L05'];
+const PLAZO_MEDIO  = ['L06','L07'];
+const PLAZO_LARGO  = ['L08','L09','L10','L11'];
+const GAR_REAL = {
+  G13:'Garantía pignoraticia', G19:'Sin garantía real',
+  G20:'Hipoteca inmobiliaria', G21:'Otra garantía real'
+};
+const GAR_PERS = { G01:'Aval AAPP', G10:'Aval particular/empresa', G22:'Aval CESCE', G33:'Aval entidad CIR' };
+const COBERTURA = { E14:'Cobertura total', E15:'Cobertura parcial' };
+const SOLIDARIO = { T33:'Riesgo solidario', T34:'Riesgo colectivo' };
+const SITUACION = {
+  I16:'Reestructurado RDL 6/2012', I17:'Refinanciado', I18:'Convenio acreedores',
+  I19:'Incumplimiento 90 días–4 años', I20:'Incumplimiento > 4 años', I21:'En suspenso'
+};
+const NATURALEZA = { T11:'Titular directo', T19:'Garante / avalista', T22:'Compromiso de firma' };
+const TIPO_PROD = { V32:'Crédito financiero', V55:'Aval financiero', V63:'Aval no financiero', V68:'Depósito', V74:'Derivado' };
+
+// ── CLASIFICADOR DE PRODUCTO ──────────────────────────────────────────────────
+function clasificar(r) {
+  const { tipoProd, plazo, garReal, cobReal, garPers, importes, solidario, naturaleza } = r;
+  const disp  = importes.dispuesto  || 0;
+  const dispo = importes.disponible || 0;
+  const total = disp + dispo;
+
+  // Avalista / garante
+  if (naturaleza === 'T19') {
+    return {
+      icon:'🛡️', tipo:'garante', color:'purple',
+      nombre:'Riesgo como avalista / garante',
+      pista:'El cliente NO es el deudor principal. Es garante de la deuda de un tercero.',
+      docsPedir:['Contrato del préstamo donde consta como avalista','Acreditar que el titular principal está al corriente de pago']
+    };
+  }
+
+  // Avales prestados
+  if (tipoProd === 'V55') return {
+    icon:'🛡️', tipo:'aval', color:'purple',
+    nombre:'Aval financiero prestado',
+    pista:'El cliente ha prestado un aval financiero. Computa como riesgo pero no es deuda directa.',
+    docsPedir:['Contrato de aval']
+  };
+  if (tipoProd === 'V63') return {
+    icon:'📋', tipo:'aval', color:'purple',
+    nombre:'Aval técnico / no financiero',
+    pista:'Aval de obra, importación u otro tipo técnico. Bajo riesgo financiero.',
+    docsPedir:[]
+  };
+
+  // Hipoteca — G20 es el indicador más fiable
+  if (garReal === 'G20') {
+    const esCancelada = PLAZO_LARGO.includes(plazo) && disp < 1;
+    if (esCancelada) return {
+      icon:'🏠', tipo:'hipoteca_cancelada', color:'orange',
+      nombre:'Hipoteca inmobiliaria',
+      pista:'Aparece con importe cero o residual. Posiblemente cancelada o vendida recientemente. El banco puede tardar hasta 1 mes en comunicar la baja a la CIR.',
+      cancelada: true,
+      docsPedir:['Nota simple del Registro (confirma cancelación)','Certificado de cancelación del banco']
+    };
+    return {
+      icon:'🏠', tipo:'hipoteca', color:'blue',
+      nombre:'Hipoteca inmobiliaria',
+      pista:`Préstamo hipotecario con ${PLAZO[plazo]?.toLowerCase() || 'plazo '+plazo} de plazo residual.${cobReal==='E14'?' La garantía cubre la totalidad del inmueble.':''}`,
+      docsPedir:['Escritura hipoteca o última revisión de cuota','Certificado saldo pendiente','Justificante de que está al corriente de pago']
+    };
+  }
+
+  // Probable hipoteca por garantía real atípica + plazo largo
+  if (garReal === 'G21' && PLAZO_LARGO.includes(plazo)) {
+    return {
+      icon:'🏠', tipo:'hipoteca_probable', color:'blue',
+      nombre:'Posible hipoteca (garantía real atípica)',
+      pista:`Crédito a largo plazo con otra garantía real. Puede ser hipoteca comercial, nave industrial, hipoteca naval u otro activo. Verificar con el cliente.${cobReal?(' Cobertura: '+(COBERTURA[cobReal]||cobReal)):''}`,
+      docsPedir:['Escritura del préstamo para confirmar naturaleza','Certificado saldo pendiente']
+    };
+  }
+
+  // Tarjeta: tiene disponible, dispuesto pequeño o nulo, sin garantía real
+  if (garReal === 'G19' && dispo > 0 && (disp === 0 || (disp <= 5 && total <= 15))) {
+    return {
+      icon:'💳', tipo:'tarjeta', color:'amber',
+      nombre:'Tarjeta de crédito',
+      pista:`Límite: ${fmt(total)} €  ·  Utilizado: ${fmt(disp)} € (${total>0?Math.round(disp/total*100):0}%)  ·  Disponible: ${fmt(dispo)} €. Computa como riesgo el límite total aunque no esté dispuesto.`,
+      docsPedir:['Extracto tarjeta para verificar límite real','Si el banco al que vas a presentar lo requiere: cancelar o reducir límite']
+    };
+  }
+
+  // Línea de crédito: disponible relevante, dispuesto también significativo
+  if (garReal === 'G19' && dispo > 0 && disp > 5) {
+    return {
+      icon:'💳', tipo:'linea', color:'amber',
+      nombre:'Línea de crédito / cuenta crédito',
+      pista:`Límite total: ${fmt(total)} €  ·  Dispuesto: ${fmt(disp)} €  ·  Disponible: ${fmt(dispo)} €. Los bancos computan el límite total, no solo lo utilizado.`,
+      docsPedir:['Contrato línea de crédito','Extracto actualizado']
+    };
+  }
+
+  // Préstamo coche: plazo corto-medio, sin garantía, importe típico vehículo
+  if (garReal === 'G19' && PLAZO_CORTO.includes(plazo) && disp >= 3 && disp <= 60 && dispo === 0) {
+    return {
+      icon:'🚗', tipo:'coche', color:'amber',
+      nombre:'Probable préstamo vehículo / consumo',
+      pista:`Préstamo sin garantía a ${PLAZO[plazo]?.toLowerCase() || plazo}. Importe y plazo compatibles con financiación de vehículo o consumo.`,
+      docsPedir:['Contrato del préstamo','Recibo último pago','Saldo pendiente actualizado']
+    };
+  }
+
+  // Préstamo personal: sin garantía, plazo corto/medio
+  if (garReal === 'G19' && (PLAZO_CORTO.includes(plazo) || PLAZO_MEDIO.includes(plazo)) && dispo === 0) {
+    return {
+      icon:'💰', tipo:'personal', color:'amber',
+      nombre:'Préstamo personal / consumo',
+      pista:`Préstamo sin garantía real a ${PLAZO[plazo]?.toLowerCase() || plazo} de plazo residual.`,
+      docsPedir:['Contrato del préstamo','Recibo último pago','Saldo pendiente actualizado']
+    };
+  }
+
+  // Largo plazo sin garantía: préstamo promotor, empresarial no hipotecario, etc.
+  if (garReal === 'G19' && PLAZO_LARGO.includes(plazo) && dispo === 0) {
+    return {
+      icon:'🏢', tipo:'largo', color:'blue',
+      nombre:'Crédito largo plazo sin garantía real',
+      pista:`Crédito financiero sin garantía real a ${PLAZO[plazo]?.toLowerCase() || plazo}. Podría ser préstamo empresarial, préstamo promotor u operación a largo plazo no hipotecaria. Verificar naturaleza con el cliente.`,
+      docsPedir:['Contrato del préstamo','Confirmar si es deuda personal o empresarial']
+    };
+  }
+
+  // Garantía pignoraticia (depósito, valores)
+  if (garReal === 'G13') {
+    return {
+      icon:'📊', tipo:'pignoracion', color:'cyan',
+      nombre:'Préstamo con garantía pignoraticia',
+      pista:'Respaldado por depósito, cartera de valores u otro activo financiero pignorado. Riesgo real bajo si el activo está vinculado.',
+      docsPedir:['Contrato','Extracto del activo pignorado']
+    };
+  }
+
+  return {
+    icon:'❓', tipo:'otro', color:'gray',
+    nombre:'Crédito financiero',
+    pista:`${TIPO_PROD[tipoProd]||tipoProd} · Plazo: ${PLAZO[plazo]||plazo} · Garantía: ${GAR_REAL[garReal]||garReal}`,
+    docsPedir:['Contrato del préstamo']
+  };
+}
+
+// ── PARSER ────────────────────────────────────────────────────────────────────
+function parseCIRITS(buffer) {
+  const text = new TextDecoder('iso-8859-1').decode(buffer);
+  const lines = text.split(/\r\n|\r|\n/).filter(l => l.trim());
+  const result = { entidad:{}, titulares:{} };
+
+  for (const line of lines) {
+    const tipo = line.substring(0,5);
+    if (tipo === 'AI000') {
+      result.entidad = {
+        codigo: line.substring(5,9).trim(),
+        nombre: line.substring(9,59).trim(),
+        numRegistros: parseInt(line.substring(76,80).trim()) || 0,
+      };
+    } else if (tipo === 'CI001') {
+      const titular    = line.substring(9,20).trim();
+      const periodo    = line.substring(20,26).trim();
+      const naturaleza = line.substring(26,29).trim();
+      const solidario  = line.substring(29,32).trim();
+      const numPart    = parseInt(line.substring(32,42).trim()||'0');
+      const tipoProd   = line.substring(42,45).trim();
+      const moneda     = line.substring(45,48).trim();
+      const plazo      = line.substring(48,51).trim();
+      const garReal    = line.substring(51,54).trim();
+      const cobReal    = line.substring(54,57).trim();
+      const garPers    = line.substring(57,60).trim();
+      const cobPers    = line.substring(60,63).trim();
+      const situacion  = line.substring(63,66).trim();
+      // Importes: bloques de 12 dígitos a partir de pos 63, después de posibles códigos
+      const rawStr = line.substring(63).replace(/\s/g,'');
+      // Extraer la situación si empieza por I
+      const sitCode = /^(I\d{2})/.test(rawStr) ? rawStr.substring(0,3) : '';
+      const rawNum = sitCode ? rawStr.substring(3) : rawStr;
+      const imp = n => { const s=rawNum.substring(n*12,(n+1)*12); return s&&/^\d+$/.test(s.trim())?parseInt(s,10):0; };
+      const importes = {
+        dispuesto:imp(0), dispuestoVencido:imp(1), dispuestoDemora:imp(2),
+        disponible:imp(3), disponibleVencido:imp(4), disponibleDemora:imp(5)
+      };
+
+      if (!result.titulares[titular]) result.titulares[titular] = {};
+      if (!result.titulares[titular][periodo]) result.titulares[titular][periodo] = [];
+      result.titulares[titular][periodo].push({
+        naturaleza, solidario, numPart,
+        tipoProd: sitCode ? 'V32' : tipoProd,
+        situacion: sitCode || '',
+        moneda, plazo, garReal, cobReal, garPers, cobPers, importes
+      });
+    } else if (tipo === 'CI002') {
+      const titular = line.substring(9,20).trim();
+      const periodo = line.substring(20,26).trim();
+      if (!result.titulares[titular]) result.titulares[titular] = {};
+      if (!result.titulares[titular][periodo]) result.titulares[titular][periodo] = [];
+      result.titulares[titular][periodo].push({ sinRiesgos:true });
+    }
+  }
+  return result;
+}
+
+// ── FORMATO ───────────────────────────────────────────────────────────────────
+const fmt = (miles) => miles > 0
+  ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:0,maximumFractionDigits:0}).format(miles*1000)
+  : '—';
+const fmtPer = p => {
+  if(!p||p.length<6) return p;
+  const m=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${m[parseInt(p.substring(4,6))-1]} ${p.substring(0,4)}`;
+};
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(data) {
+  const cont = document.getElementById('results');
+  cont.style.display = 'block';
+
+  // Detectar si TODOS los titulares están sin riesgos (solo CI002)
+  const todosLimpios = Object.values(data.titulares).every(periodos =>
+    Object.values(periodos).every(regs => regs.every(r => r.sinRiesgos))
+  );
+
+  if (todosLimpios) {
+    const nifs = Object.keys(data.titulares).join(', ');
+    const periods = [...new Set(
+      Object.values(data.titulares).flatMap(p => Object.keys(p))
+    )].sort().reverse().map(fmtPer).join(' · ');
+    cont.innerHTML = `
+      <div class="entity-bar">
+        <span>Entidad: <strong>${data.entidad.codigo}</strong></span>
+        <span class="sep">·</span>
+        <span><strong>${data.entidad.nombre}</strong></span>
+      </div>
+      <div style="background:#051a0d;border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:48px 32px;text-align:center;margin-top:8px;">
+        <div style="font-size:48px;margin-bottom:16px;">✅</div>
+        <div style="font-family:var(--display);font-size:22px;font-weight:800;color:var(--green);margin-bottom:8px;">Sin deudas en CIRBE</div>
+        <div style="color:var(--muted);font-size:14px;margin-bottom:6px;">El titular <strong style="color:var(--text);font-family:var(--mono)">${nifs}</strong> no figura con ninguna operación activa en la Central de Información de Riesgos del Banco de España.</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:8px;">Períodos consultados: ${periods}</div>
+      </div>
+      <div class="alert ok" style="margin-top:16px;"><span class="alert-icon">💡</span><div><strong>Perfil limpio — favorable para la operación</strong>No hay deudas, hipotecas, préstamos ni tarjetas declaradas. Puedes proceder con el análisis de ingresos sin restricciones de endeudamiento previo.</div></div>
+      <div class="actions">
+        <button class="btn" onclick="location.reload()">↩ Cargar otro fichero</button>
+      </div>`;
+    return;
+  }
+
+  // Calcular KPIs globales (último período, titulares directos)
+  let totalDisp=0, totalDispo=0, totalVenc=0;
+  let nHipotecas=0, nPersonales=0, nTarjetas=0, nIncidencias=0;
+  const allDocs = new Set();
+
+  for (const [,periodos] of Object.entries(data.titulares)) {
+    const pLast = Object.keys(periodos).sort().reverse()[0];
+    const regs = periodos[pLast] || [];
+    for (const r of regs) {
+      if (r.sinRiesgos || r.solidario) continue;
+      const venc = (r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
+      totalDisp  += r.importes.dispuesto||0;
+      totalDispo += r.importes.disponible||0;
+      totalVenc  += venc;
+      if (venc>0 || r.situacion) nIncidencias++;
+      const cls = clasificar(r);
+      if (['hipoteca','hipoteca_probable','hipoteca_cancelada'].includes(cls.tipo)) nHipotecas++;
+      else if (['tarjeta','linea'].includes(cls.tipo)) nTarjetas++;
+      else if (['personal','coche'].includes(cls.tipo)) nPersonales++;
+      cls.docsPedir.forEach(d => allDocs.add(d));
+    }
+  }
+
+  let html = '';
+
+  // Entidad
+  html += `<div class="entity-bar">
+    <span>Entidad: <strong>${data.entidad.codigo}</strong></span>
+    <span class="sep">·</span>
+    <span><strong>${data.entidad.nombre}</strong></span>
+    <span class="sep">·</span>
+    <span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span>
+    <span class="sep">·</span>
+    <span>Registros: <strong>${data.entidad.numRegistros}</strong></span>
+  </div>`;
+
+  // KPIs
+  const kpiDeudaColor = totalVenc>0 ? 'r' : totalDisp>200 ? 'a' : 'gold';
+  html += `<div class="kpi-row">
+    <div class="kpi ${kpiDeudaColor}">
+      <div class="kpi-lbl">Deuda total activa</div>
+      <div class="kpi-val ${kpiDeudaColor}" style="font-size:${totalDisp>9999?'17px':'22px'}">${fmt(totalDisp)}</div>
+      <div class="kpi-sub">período más reciente</div>
+    </div>
+    <div class="kpi b">
+      <div class="kpi-lbl">Crédito disponible</div>
+      <div class="kpi-val b" style="font-size:${totalDispo>9999?'17px':'22px'}">${totalDispo>0?fmt(totalDispo):'—'}</div>
+      <div class="kpi-sub">líneas abiertas</div>
+    </div>
+    <div class="kpi ${totalVenc>0?'r':'g'}">
+      <div class="kpi-lbl">Importes vencidos</div>
+      <div class="kpi-val ${totalVenc>0?'r':'g'}">${totalVenc>0?fmt(totalVenc):'Ninguno'}</div>
+      <div class="kpi-sub">${totalVenc>0?'⚠ Revisar urgente':'sin incidencias de pago'}</div>
+    </div>
+    <div class="kpi ${nHipotecas>0?'b':'g'}">
+      <div class="kpi-lbl">Hipotecas</div>
+      <div class="kpi-val ${nHipotecas>0?'b':'g'}">${nHipotecas}</div>
+      <div class="kpi-sub">${nHipotecas===0?'sin hipotecas declaradas':nHipotecas===1?'hipoteca detectada':'hipotecas detectadas'}</div>
+    </div>
+    <div class="kpi ${nPersonales>0?'a':'g'}">
+      <div class="kpi-lbl">Préstamos / consumo</div>
+      <div class="kpi-val ${nPersonales>0?'a':'g'}">${nPersonales}</div>
+      <div class="kpi-sub">${nPersonales===0?'ninguno':'préstamos personales'}</div>
+    </div>
+    <div class="kpi ${nTarjetas>0?'a':'g'}">
+      <div class="kpi-lbl">Tarjetas / líneas</div>
+      <div class="kpi-val ${nTarjetas>0?'a':'g'}">${nTarjetas}</div>
+      <div class="kpi-sub">${nTarjetas===0?'ninguna':'computa el límite total'}</div>
+    </div>
+  </div>`;
+
+  // Alertas globales
+  if (totalVenc > 0) {
+    html += `<div class="alert err"><span class="alert-icon">🚨</span><div><strong>Importes vencidos — requiere acción inmediata</strong>Se detectan ${fmt(totalVenc)} en pagos vencidos o impagados. Solicitar aclaración al cliente antes de presentar a ningún banco. Puede bloquear la operación.</div></div>`;
+  }
+  if (nHipotecas > 0) {
+    html += `<div class="alert info"><span class="alert-icon">🏠</span><div><strong>${nHipotecas} hipoteca${nHipotecas>1?'s':''} detectada${nHipotecas>1?'s':''}</strong>Verificar si el cliente la mantiene (vivienda habitual / inversión) o si fue cancelada recientemente por venta del inmueble. En caso de cancelación reciente, pedir nota simple y certificado del banco.</div></div>`;
+  }
+  if (nTarjetas > 0) {
+    html += `<div class="alert warn"><span class="alert-icon">💳</span><div><strong>Tarjetas / líneas de crédito abiertas</strong>Los bancos computan el límite total de las tarjetas como riesgo, no solo lo utilizado. Si el cliente no las usa, recomendar cancelarlas o reducir el límite antes de presentar la operación.</div></div>`;
+  }
+  html += `<div class="alert info" style="background:rgba(107,114,128,.07);border-color:rgba(107,114,128,.2);color:var(--muted)"><span class="alert-icon">ℹ️</span><div>El CIRBE es un informe <strong style="color:var(--text)">agregado</strong> — agrupa por tipo de producto, plazo y garantía. Varios préstamos del mismo tipo pueden aparecer en una sola línea. La clasificación de producto es orientativa.</div></div>`;
+
+  // Titulares
+  html += `<div class="sec"><div class="sec-title">Detalle por titular</div>`;
+
+  for (const [titular, periodos] of Object.entries(data.titulares)) {
+    const periods = Object.keys(periodos).sort();
+    const pLast   = [...periods].reverse()[0];
+    const regsLast = periodos[pLast] || [];
+    const sinRiesgos = regsLast.every(r => r.sinRiesgos);
+    let totalTitDisp=0, totalTitVenc=0;
+    for (const r of regsLast) {
+      if (r.sinRiesgos || r.solidario) continue;
+      totalTitDisp += r.importes.dispuesto||0;
+      totalTitVenc += (r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
+    }
+
+    const badgeClass = sinRiesgos ? 'tb-ok' : totalTitVenc>0 ? 'tb-err' : 'tb-warn';
+    const badgeText  = sinRiesgos ? '✓ Sin deudas' : totalTitVenc>0 ? '🚨 Con vencidos' : '⚠ Activo';
+
+    html += `<div class="titular-box">
+      <div class="titular-header">
+        <span class="titular-nif">${titular}</span>
+        <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>
+        ${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}
+        <span class="titular-badge ${badgeClass}">${badgeText}</span>
+      </div>`;
+
+    // Tabs si hay múltiples períodos
+    if (periods.length > 1) {
+      html += `<div class="period-tabs">`;
+      for (const p of periods.reverse()) {
+        html += `<div class="ptab${p===pLast?' active':''}" onclick="switchPeriod('${titular}','${p}')" data-t="${titular}" data-p="${p}">${fmtPer(p)}</div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Contenido por período
+    for (const period of periods) {
+      const regs = periodos[period];
+      const isVisible = period === pLast;
+      html += `<div class="period-content${isVisible?' visible':''}" id="pc_${titular}_${period}">`;
+
+      if (regs.every(r => r.sinRiesgos)) {
+        html += `<div class="no-risk">✅ Sin riesgos declarados en CIRBE para este período</div>`;
+      } else {
+        html += `<div class="prod-grid">`;
+        for (const r of regs) {
+          if (r.sinRiesgos) continue;
+          const cls = clasificar(r);
+          const venc = (r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
+          const disp  = r.importes.dispuesto||0;
+          const dispo = r.importes.disponible||0;
+          const total = disp + dispo;
+          const pct   = total>0 ? Math.round(disp/total*100) : 0;
+          const showBar = dispo > 0 && total > 0;
+          const barClass = pct>80?'danger':pct>50?'warn':'';
+
+          const extraClasses = [
+            venc>0||r.situacion ? 'has-incidencia' : '',
+            cls.cancelada ? 'posible-cancelada' : ''
+          ].filter(Boolean).join(' ');
+
+          // Tags informativos
+          const tags = [];
+          tags.push(`<span class="tag blue">${PLAZO[r.plazo]||r.plazo}</span>`);
+          if (r.garReal && r.garReal !== 'G19') tags.push(`<span class="tag blue">${GAR_REAL[r.garReal]||r.garReal}${r.cobReal?' · '+(COBERTURA[r.cobReal]||r.cobReal):''}</span>`);
+          if (r.garPers) tags.push(`<span class="tag amber">${GAR_PERS[r.garPers]||r.garPers}${r.cobPers?' · '+(COBERTURA[r.cobPers]||r.cobPers):''}</span>`);
+          if (r.moneda && r.moneda!=='EUR') tags.push(`<span class="tag gray">${r.moneda}</span>`);
+          if (r.solidario) tags.push(`<span class="tag cyan">${SOLIDARIO[r.solidario]||r.solidario} · ${r.numPart} partíc.</span>`);
+          if (r.naturaleza && r.naturaleza!=='T11') tags.push(`<span class="tag purple">${NATURALEZA[r.naturaleza]||r.naturaleza}</span>`);
+          if (r.situacion) tags.push(`<span class="tag red">⚠ ${SITUACION[r.situacion]||r.situacion}</span>`);
+
+          html += `<div class="prod-card ${extraClasses}">
+            <div class="prod-card-top">
+              <div class="prod-icon">${cls.icon}</div>
+              <div class="prod-info">
+                <div class="prod-name">${cls.nombre}${cls.cancelada?` <span style="font-size:11px;background:rgba(249,115,22,.15);color:var(--orange);padding:2px 7px;border-radius:4px;font-weight:600;">POSIBLE CANCELADA</span>`:''}</div>
+                <div class="prod-desc">${cls.pista}</div>
+              </div>
+              <div class="prod-amounts">
+                ${disp>0?`<div class="amt-block"><div class="amt-lbl">Pendiente</div><div class="amt-val amber">${fmt(disp)}</div></div>`:''}
+                ${dispo>0?`<div class="amt-block"><div class="amt-lbl">Disponible</div><div class="amt-val blue">${fmt(dispo)}</div></div>`:''}
+                ${dispo>0?`<div class="amt-block"><div class="amt-lbl">Límite</div><div class="amt-val">${fmt(total)}</div></div>`:''}
+                ${venc>0?`<div class="amt-block"><div class="amt-lbl">⚠ Vencido</div><div class="amt-val red">${fmt(venc)}</div></div>`:''}
+                ${disp===0&&dispo===0?`<div class="amt-block"><div class="amt-lbl">Importe</div><div class="amt-val muted">—</div></div>`:''}
+              </div>
+            </div>
+            ${showBar?`<div class="credit-bar-wrap show">
+              <div class="bar-labels"><span>Usado: ${fmt(disp)} (${pct}%)</span><span>Límite: ${fmt(total)}</span></div>
+              <div class="bar-track"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div>
+            </div>`:''}
+            ${venc>0?`<div class="incid-banner"><span>🚨</span><div><strong>Impago / vencido: ${fmt(venc)}</strong> — Pedir explicación al cliente. ${r.situacion?SITUACION[r.situacion]+'.':''} Puede bloquear la aprobación bancaria.</div></div>`:''}
+            ${cls.cancelada?`<div class="cancel-banner"><span>⚠️</span><div><strong>Posible hipoteca cancelada recientemente</strong> — Si el cliente vendió el inmueble, pedir nota simple del registro y certificado de cancelación del banco para excluirla del cálculo de endeudamiento.</div></div>`:''}
+            ${tags.length?`<div class="prod-tags">${tags.join('')}</div>`:''}
+          </div>`;
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // Checklist documentación
+  html += `<div class="sec"><div class="sec-title">📋 Documentación a pedir al cliente</div>
+  <div class="checklist">
+    <div class="checklist-header">✅ Checklist — verificar antes de presentar al banco</div>
+    <div class="checklist-body" id="checklistBody">`;
+
+  // Generamos items accionables según lo encontrado
+  const checkItems = [];
+
+  if (totalVenc > 0) {
+    checkItems.push({ text: '<strong>Justificación de importes vencidos o impagados</strong> <span>— Extracto bancario + explicación escrita del cliente</span>', priority: 'high' });
+  }
+  if (nHipotecas > 0) {
+    checkItems.push({ text: '<strong>Escritura de hipoteca o certificado de saldo pendiente</strong> <span>— Para confirmar importe y cuota actual</span>', priority: 'high' });
+    checkItems.push({ text: '<strong>Recibo del último pago de la hipoteca</strong> <span>— Confirma que está al corriente</span>', priority: 'med' });
+  }
+
+  // Buscar hipotecas posiblemente canceladas
+  let hayPosibleCancelada = false;
+  for (const [,periodos] of Object.entries(data.titulares)) {
+    const pLast = Object.keys(periodos).sort().reverse()[0];
+    for (const r of periodos[pLast]||[]) {
+      const cls = clasificar(r);
+      if (cls.cancelada) { hayPosibleCancelada = true; break; }
+    }
+  }
+  if (hayPosibleCancelada) {
+    checkItems.push({ text: '<strong>Nota simple del Registro de la Propiedad</strong> <span>— Si el cliente vendió el inmueble recientemente, para confirmar que la hipoteca está cancelada</span>', priority: 'high' });
+    checkItems.push({ text: '<strong>Certificado de cancelación de hipoteca</strong> <span>— Emitido por el banco una vez escriturada la cancelación</span>', priority: 'high' });
+  }
+  if (nPersonales > 0) {
+    checkItems.push({ text: '<strong>Contratos de préstamos personales / consumo</strong> <span>— Para cruzar importes con el CIRBE y confirmar cuotas</span>', priority: 'med' });
+  }
+  if (nTarjetas > 0) {
+    checkItems.push({ text: '<strong>Extractos de tarjetas de crédito</strong> <span>— Límite actual y saldo. Valorar cancelación antes de presentar</span>', priority: 'med' });
+  }
+  checkItems.push({ text: '<strong>Cruzar todos los importes del CIRBE con lo declarado por el cliente</strong> <span>— Cualquier diferencia debe tener explicación documentada</span>', priority: 'med' });
+  checkItems.push({ text: '<strong>Confirmar si hay deudas de empresa que aparezcan como personales</strong> <span>— Si es autónomo o socio, puede haber riesgo empresarial mezclado con personal</span>', priority: 'low' });
+
+  for (let i=0; i<checkItems.length; i++) {
+    const item = checkItems[i];
+    const prioClass = item.priority==='high'?'priority-high':item.priority==='med'?'priority-med':'';
+    html += `<div class="check-item ${prioClass}">
+      <div class="check-box" id="cb_${i}" onclick="toggleCheck(${i})">&nbsp;</div>
+      <div class="check-text">${item.text}</div>
+    </div>`;
+  }
+
+  html += `</div></div></div>`;
+
+  // Acciones
+  html += `<div class="actions">
+    <button class="btn primary" onclick="copiarResumen()">📋 Copiar resumen para Bitrix24</button>
+    <button class="btn" style="background:#1a2a1a;border-color:rgba(34,197,94,.4);color:var(--green);font-weight:600;" onclick="generarPDF()">⬇ Descargar PDF para cliente</button>
+    <button class="btn" onclick="location.reload()">↩ Cargar otro fichero</button>
+  </div>`;
+
+  cont.innerHTML = html;
+  window._data = data;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function switchPeriod(titular, periodo) {
+  document.querySelectorAll(`[id^="pc_${titular}_"]`).forEach(el => el.classList.remove('visible'));
+  document.getElementById(`pc_${titular}_${periodo}`)?.classList.add('visible');
+  document.querySelectorAll(`.ptab[data-t="${titular}"]`).forEach(el => {
+    el.classList.toggle('active', el.dataset.p === periodo);
+  });
+}
+
+function toggleCheck(i) {
+  const cb = document.getElementById('cb_'+i);
+  if (!cb) return;
+  const checked = cb.classList.toggle('checked');
+  cb.textContent = checked ? '✓' : ' ';
+}
+
+function copiarResumen() {
+  const d = window._data; if(!d) return;
+  let txt = `=== ANÁLISIS CIRBE — INVERNOMICS ===\nFecha análisis: ${new Date().toLocaleDateString('es-ES')}\nEntidad: ${d.entidad.nombre}\n\n`;
+
+  for (const [titular, periodos] of Object.entries(d.titulares)) {
+    const pLast = Object.keys(periodos).sort().reverse()[0];
+    const regs  = periodos[pLast] || [];
+    txt += `━━━ TITULAR: ${titular} (datos a ${fmtPer(pLast)}) ━━━\n`;
+    if (regs.every(r => r.sinRiesgos)) { txt += `  ✅ Sin deudas en CIRBE\n\n`; continue; }
+
+    let totalTit = 0;
+    for (const r of regs) {
+      if (r.sinRiesgos) continue;
+      const cls = clasificar(r);
+      const venc = (r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
+      const disp = r.importes.dispuesto||0;
+      const dispo = r.importes.disponible||0;
+      totalTit += disp;
+
+      txt += `  ${cls.icon} ${cls.nombre}`;
+      if (cls.cancelada) txt += ` [POSIBLE CANCELADA]`;
+      txt += `\n`;
+      txt += `     Pendiente: ${fmt(disp)}`;
+      if (dispo>0) txt += `  |  Disponible: ${fmt(dispo)}  |  Límite: ${fmt(disp+dispo)}`;
+      txt += `  |  Plazo: ${PLAZO[r.plazo]||r.plazo}`;
+      if (r.garReal!=='G19') txt += `  |  ${GAR_REAL[r.garReal]||r.garReal}`;
+      if (venc>0) txt += `\n     ⚠ VENCIDO: ${fmt(venc)}`;
+      if (r.situacion) txt += `\n     ⚠ SITUACIÓN: ${SITUACION[r.situacion]||r.situacion}`;
+      txt += `\n     Pista: ${cls.pista}\n\n`;
+    }
+    txt += `  TOTAL TITULAR: ${fmt(totalTit)}\n\n`;
+  }
+
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.querySelector('.btn.primary');
+    const orig = b.textContent;
+    b.textContent = '✓ Copiado al portapapeles';
+    setTimeout(()=>b.textContent=orig, 2500);
+  });
+}
+
+// ── GENERAR PDF CLIENTE ───────────────────────────────────────────────────────
+function generarPDF() {
+  const d = window._data;
+  if (!d) return;
+
+  // Actualizar fecha en cabecera de impresión
+  const hoy = new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'long', year:'numeric' });
+  const printFecha = document.getElementById('print-fecha');
+  if (printFecha) printFecha.textContent = 'Generado el ' + hoy;
+
+  // Añadir nota legal si no existe
+  let legal = document.getElementById('print-legal');
+  if (!legal) {
+    legal = document.createElement('div');
+    legal.id = 'print-legal';
+    legal.style.display = 'none';
+    legal.innerHTML = `Este informe es un análisis orientativo elaborado por Broker Invernomics SL a partir del fichero CIRITS facilitado por el Banco de España. La clasificación de los productos es estimada y no constituye dictamen jurídico ni financiero vinculante. Los importes figuran en miles de euros según el formato del Banco de España. Documento confidencial destinado exclusivamente al titular y a Broker Invernomics SL.`;
+    document.getElementById('results').appendChild(legal);
+  }
+
+  // Cambiar título del documento para el nombre del PDF
+  const nifTitular = Object.keys(d.titulares)[0] || 'cliente';
+  const fechaStr = new Date().toISOString().slice(0,10);
+  const titleOrig = document.title;
+  document.title = `CIRBE_Invernomics_${nifTitular}_${fechaStr}`;
+
+  // Imprimir
+  window.print();
+
+  // Restaurar título
+  setTimeout(() => { document.title = titleOrig; }, 1000);
+}
+
+// ── EVENTOS ───────────────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+const fi = document.getElementById('fileInput');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  if(e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change', () => { if(fi.files[0]) process(fi.files[0]); });
+
+function process(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = parseCIRITS(e.target.result);
+      render(data);
+      dz.style.display = 'none';
+    } catch(err) {
+      alert('Error al procesar el fichero: ' + err.message);
+    }
+  };
+  r.readAsArrayBuffer(file);
+}
+</script>
+</body>
+</html>
