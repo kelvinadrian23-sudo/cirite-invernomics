@@ -269,7 +269,7 @@ input::placeholder{color:var(--text3);font-family:var(--sans);font-size:12px;}
 </div>
 
 <script>
-const RAILWAY_URL = 'https://itw-invernomics-production.up.railway.app';
+const RAILWAY_URL = 'https://itw-invernomics-production-e7ff.up.railway.app';
 const RAILWAY_API_KEY = 'Invernomics2024BdE!';
 const FIELDS = {
   titular1:{nombre:'UF_CRM_1746731416351',dni:'UF_CRM_1740250548521'},
@@ -527,30 +527,71 @@ async function sendToBde(){
 
 setMode('bitrix');
 
+function getDealDnis() {
+  var dnis = [];
+  if (loadedTitulares && loadedTitulares.length > 0) {
+    for (var i = 0; i < loadedTitulares.length; i++) {
+      var d = (loadedTitulares[i].dni || '').trim().toUpperCase();
+      if (d) dnis.push(d);
+    }
+  }
+  return dnis;
+}
+
 async function fetchFilesFromBde() {
   const btn = document.getElementById('btnFetchBde');
   const status = document.getElementById('cirbeStatus');
   const filesDiv = document.getElementById('cirbeFiles');
   btn.disabled = true;
-  status.textContent = 'Consultando BdE…';
   filesDiv.style.display = 'none';
   filesDiv.innerHTML = '';
+
+  // Obtener DNIs del deal actual
+  var dnis = getDealDnis();
+  if (dnis.length === 0 && BX24_DEAL_ID) {
+    status.textContent = 'Cargando titulares del deal…';
+    try {
+      var deal;
+      if (typeof BX24 !== 'undefined' && BX24_READY) {
+        deal = await bx24Call('crm.deal.get', { id: Number(BX24_DEAL_ID) });
+      } else {
+        var wu = (document.getElementById('webhookUrl') || {}).value || '';
+        if (wu) {
+          var r = await fetch(wu.replace(/\/$/, '') + '/crm.deal.get.json?id=' + encodeURIComponent(BX24_DEAL_ID));
+          var j = await r.json();
+          deal = j.result;
+        }
+      }
+      if (deal) {
+        var defs = [FIELDS.titular1, FIELDS.titular2, FIELDS.titular3];
+        for (var t of defs) { var d = (deal[t.dni] || '').trim().toUpperCase(); if (d) dnis.push(d); }
+      }
+    } catch (e) { console.log('Error cargando titulares:', e.message); }
+  }
+
+  if (dnis.length === 0) {
+    status.textContent = '⚠ No se detectaron DNIs. Carga primero los datos del deal en Generar CIRITE.';
+    btn.disabled = false;
+    return;
+  }
+
+  status.textContent = 'Buscando CIRBE para ' + dnis.join(', ') + '…';
   try {
-    const resp = await fetch(RAILWAY_URL + '/descargar-cirbe', {
+    const resp = await fetch(RAILWAY_URL + '/descargar-cirbe?dni=' + encodeURIComponent(dnis.join(',')), {
       headers: { 'x-api-key': RAILWAY_API_KEY }
     });
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     if (data.total === 0) {
-      status.textContent = 'No hay ficheros disponibles en este momento.';
+      status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
       return;
     }
-    status.textContent = data.total + ' fichero(s) disponible(s)';
+    status.textContent = data.total + ' fichero(s) para ' + dnis.join(', ');
     filesDiv.innerHTML = data.files.map(f =>
       '<div class="cirbe-file-row">' +
         '<div class="cirbe-file-info">' +
-          '<div class="cirbe-file-name">' + escapeHtml(f.fileName) + '</div>' +
-          '<div class="cirbe-file-meta">' + escapeHtml(f.process) + ' · ' + escapeHtml(f.date) + '</div>' +
+          '<div class="cirbe-file-name">' + escapeHtml(f.dnis ? f.dnis.join(', ') : f.fileName) + '</div>' +
+          '<div class="cirbe-file-meta">' + escapeHtml(f.date) + '</div>' +
         '</div>' +
         '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
           'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process) + '\')">' +
