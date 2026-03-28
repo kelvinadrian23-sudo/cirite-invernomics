@@ -138,6 +138,20 @@ input::placeholder{color:var(--text3);font-family:var(--sans);font-size:12px;}
 .send-result.ok{background:var(--green-bg);border:1px solid var(--green-br);color:#6ee7b7;display:block;}
 .send-result.err{background:var(--red-bg);border:1px solid var(--red-br);color:#fca5a5;display:block;}
 .info-box{background:var(--accent-bg);border:1px solid var(--accent-br);border-radius:var(--r);padding:11px 15px;font-size:12px;color:#93c5fd;line-height:1.6;margin-bottom:18px;}
+
+/* ── CIRBE SECTION ── */
+#sec-cirbe{display:none;flex-direction:column;height:calc(100vh - 54px);}
+#sec-cirbe.active{display:flex;}
+.cirbe-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0;}
+.cirbe-files{display:none;width:100%;margin-top:10px;}
+.cirbe-file-row{display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;}
+.cirbe-file-row:last-child{margin-bottom:0;}
+.cirbe-file-info{flex:1;min-width:0;}
+.cirbe-file-name{font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cirbe-file-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.cirbe-status{font-size:12px;color:var(--text2);}
+.cirbe-frame{flex:1;min-height:0;}
+.cirbe-frame iframe{width:100%;height:100%;border:none;display:block;}
 .info-box strong{color:var(--accent);}
 
 @media(max-width:600px){.row,.row.tri{grid-template-columns:1fr}.data-grid{grid-template-columns:1fr}h1{font-size:22px}}
@@ -244,8 +258,13 @@ input::placeholder{color:var(--text3);font-family:var(--sans);font-size:12px;}
 
 <!-- ═══ SECCIÓN 2: ANALIZADOR CIRBE ═══ -->
 <div class="app-section" id="sec-cirbe">
-  <div class="frame-wrap">
-    <iframe src="https://cirite-invernomics.pages.dev/cirits-parser.html" title="Analizador CIRBE" allow="clipboard-write"></iframe>
+  <div class="cirbe-panel">
+    <button class="btn btn-accent" id="btnFetchBde" onclick="fetchFilesFromBde()">🔍 Buscar respuesta en BdE</button>
+    <span class="cirbe-status" id="cirbeStatus"></span>
+    <div class="cirbe-files" id="cirbeFiles"></div>
+  </div>
+  <div class="cirbe-frame">
+    <iframe id="parserFrame" src="https://cirite-invernomics.pages.dev/cirits-parser.html" title="Analizador CIRBE" allow="clipboard-write"></iframe>
   </div>
 </div>
 
@@ -507,6 +526,69 @@ async function sendToBde(){
 }
 
 setMode('bitrix');
+
+async function fetchFilesFromBde() {
+  const btn = document.getElementById('btnFetchBde');
+  const status = document.getElementById('cirbeStatus');
+  const filesDiv = document.getElementById('cirbeFiles');
+  btn.disabled = true;
+  status.textContent = 'Consultando BdE…';
+  filesDiv.style.display = 'none';
+  filesDiv.innerHTML = '';
+  try {
+    const resp = await fetch(RAILWAY_URL + '/descargar-cirbe', {
+      headers: { 'x-api-key': RAILWAY_API_KEY }
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    if (data.total === 0) {
+      status.textContent = 'No hay ficheros disponibles en este momento.';
+      return;
+    }
+    status.textContent = data.total + ' fichero(s) disponible(s)';
+    filesDiv.innerHTML = data.files.map(f =>
+      '<div class="cirbe-file-row">' +
+        '<div class="cirbe-file-info">' +
+          '<div class="cirbe-file-name">' + escapeHtml(f.fileName) + '</div>' +
+          '<div class="cirbe-file-meta">' + escapeHtml(f.process) + ' · ' + escapeHtml(f.date) + '</div>' +
+        '</div>' +
+        '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
+          'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process) + '\')">' +
+          'Analizar →' +
+        '</button>' +
+      '</div>'
+    ).join('');
+    filesDiv.style.display = 'block';
+  } catch (err) {
+    status.textContent = '❌ ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function downloadAndAnalyze(identifier, proceso) {
+  const status = document.getElementById('cirbeStatus');
+  const filesDiv = document.getElementById('cirbeFiles');
+  status.textContent = 'Descargando fichero…';
+  try {
+    const resp = await fetch(
+      RAILWAY_URL + '/descargar-cirbe?identifier=' + encodeURIComponent(identifier) + '&proceso=' + encodeURIComponent(proceso),
+      { headers: { 'x-api-key': RAILWAY_API_KEY } }
+    );
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error al descargar');
+    const binary = atob(data.fileBase64);
+    const buffer = new ArrayBuffer(binary.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
+    const frame = document.getElementById('parserFrame');
+    frame.contentWindow.postMessage({ type: 'LOAD_CIRBE', buffer: buffer, fileName: data.fileName }, '*', [buffer]);
+    status.textContent = '✓ Analizando ' + escapeHtml(data.fileName || identifier);
+    filesDiv.style.display = 'none';
+  } catch (err) {
+    status.textContent = '❌ ' + err.message;
+  }
+}
 </script>
 </body>
 </html>
