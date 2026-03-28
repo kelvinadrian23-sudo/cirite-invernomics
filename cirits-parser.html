@@ -557,6 +557,18 @@ function process(file){
   r.onload=e=>{try{const data=parseCIRITS(e.target.result);render(data);dz.style.display='none';}catch(err){alert('Error al procesar el fichero: '+err.message);}};
   r.readAsArrayBuffer(file);
 }
+
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.type==='LOAD_CIRBE'&&e.data.buffer){
+    try{
+      const data=parseCIRITS(e.data.buffer);
+      render(data);
+      dz.style.display='none';
+    }catch(err){
+      alert('Error al procesar el fichero: '+err.message);
+    }
+  }
+});
 </script>
 </body>
 </html>
