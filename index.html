@@ -583,7 +583,37 @@ async function fetchFilesFromBde() {
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     if (data.total === 0) {
-      status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
+      // No match with deal DNIs — check if BdE has any files at all
+      try {
+        const all = await fetch(RAILWAY_URL + '/descargar-cirbe', {
+          headers: { 'x-api-key': RAILWAY_API_KEY }
+        });
+        const allData = await all.json();
+        if (allData.ok && allData.total > 0) {
+          status.innerHTML =
+            '⚠ Ningún fichero contiene los DNIs <b>' + dnis.join(', ') + '</b>. ' +
+            'Hay <b>' + allData.total + '</b> fichero(s) disponible(s) en BdE (pueden ser de prueba u otra operación).';
+          filesDiv.innerHTML =
+            '<div style="padding:10px 0 6px;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">Todos los ficheros disponibles en BdE</div>' +
+            allData.files.map(f =>
+              '<div class="cirbe-file-row">' +
+                '<div class="cirbe-file-info">' +
+                  '<div class="cirbe-file-name" style="color:var(--text2)">' + escapeHtml(f.fileName || f.identifier) + '</div>' +
+                  '<div class="cirbe-file-meta">' + escapeHtml(f.date) + ' · ' + escapeHtml(f.process || 'CIRITE') + '</div>' +
+                '</div>' +
+                '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
+                  'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process) + '\')">' +
+                  'Analizar →' +
+                '</button>' +
+              '</div>'
+            ).join('');
+          filesDiv.style.display = 'block';
+        } else {
+          status.textContent = 'No hay ficheros CIRBE disponibles en BdE para ' + dnis.join(', ') + '.';
+        }
+      } catch (e) {
+        status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
+      }
       return;
     }
     status.textContent = data.total + ' fichero(s) para ' + dnis.join(', ');
