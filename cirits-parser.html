@@ -403,7 +403,7 @@ function render(data) {
   if(totalVenc>0) html+=`<div class="alert err"><span class="alert-icon">🚨</span><div><strong>Importes vencidos — requiere acción inmediata</strong>Se detectan ${fmt(totalVenc)} en pagos vencidos o impagados. Solicitar aclaración antes de presentar a ningún banco.</div></div>`;
   if(nHipotecas>0) html+=`<div class="alert info"><span class="alert-icon">🏠</span><div><strong>${nHipotecas} hipoteca${nHipotecas>1?'s':''} detectada${nHipotecas>1?'s':''}</strong>Verificar si la mantiene (vivienda/inversión) o fue cancelada recientemente. En caso de cancelación, pedir nota simple y certificado del banco.</div></div>`;
   if(nTarjetas>0) html+=`<div class="alert warn"><span class="alert-icon">💳</span><div><strong>Tarjetas / líneas de crédito abiertas</strong>Los bancos computan el límite total como riesgo. Si no las usa, recomendar cancelarlas antes de presentar la operación.</div></div>`;
-  html+=`<div class="alert info" style="background:rgba(30,45,74,.3);border-color:var(--border);color:var(--text2)"><span class="alert-icon">ℹ️</span><div>El CIRBE es un informe <strong style="color:var(--text)">agregado</strong> — puede agrupar varios préstamos en una sola línea. El plazo declarado es el del contrato original, no el residual real. La clasificación de producto es orientativa.</div></div>`;
+  html+=`<div class="alert info" style="background:rgba(30,45,74,.3);border-color:var(--border);color:var(--text2)"><span class="alert-icon">ℹ️</span><div>El CIRBE es un informe <strong style="color:var(--text)">agregado</strong> — puede agrupar varios préstamos en una sola línea. La clasificación de producto es orientativa.</div></div>`;
 
   html+=`<div class="sec"><div class="sec-title">Detalle por titular</div>`;
   for(const[titular,periodos]of Object.entries(data.titulares)){
@@ -456,7 +456,7 @@ function render(data) {
             </div>
             ${showBar?`<div class="credit-bar-wrap"><div class="bar-labels"><span>Usado: ${fmt(disp)} (${pct}%)</span><span>Límite: ${fmt(total)}</span></div><div class="bar-track"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div></div>`:''}
             ${venc>0?`<div class="incid-banner"><span>🚨</span><div><strong>Impago / vencido: ${fmt(venc)}</strong> — Pedir explicación al cliente. ${r.situacion?SITUACION[r.situacion]+'.':''} Puede bloquear la aprobación bancaria.</div></div>`:''}
-            ${cls.cancelada?`<div class="cancel-banner"><span>⚠️</span><div><strong>Posible hipoteca cancelada</strong> — Si el cliente vendió el inmueble, pedir nota simple del registro y certificado de cancelación del banco.</div></div>`:''}
+            ${cls.cancelada?`<div class="cancel-banner"><span>⚠️</span><div><strong>Posible ${cls.tipo==='hipoteca_cancelada'?'hipoteca':'préstamo'} cancelado/a</strong> — ${cls.tipo==='hipoteca_cancelada'?'Si el cliente vendió el inmueble, pedir nota simple del registro y certificado de cancelación del banco.':'Confirmar con el cliente si está cancelado y pedir certificado si es necesario.'}</div></div>`:''}
             ${tags.length?`<div class="prod-tags">${tags.join('')}</div>`:''}
           </div>`;
         }
