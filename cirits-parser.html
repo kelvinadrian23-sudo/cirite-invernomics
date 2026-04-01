@@ -322,7 +322,7 @@ function parseCIRITS(buffer) {
   for (const line of lines) {
     const tipo = line.substring(0,5);
     if (tipo === 'AI000') {
-      result.entidad = { codigo:line.substring(5,9).trim(), nombre:line.substring(9,59).trim(), numRegistros:parseInt(line.substring(76,80).trim())||0 };
+      result.entidad = { codigo:line.substring(5,9).trim(), nombre:line.substring(9,59).trim() };
     } else if (tipo === 'CI001') {
       const titular=line.substring(9,20).trim(), periodo=line.substring(20,26).trim();
       const naturaleza=line.substring(26,29).trim(), solidario=line.substring(29,32).trim();
@@ -330,14 +330,15 @@ function parseCIRITS(buffer) {
       const tipoProd=line.substring(42,45).trim(), moneda=line.substring(45,48).trim();
       const plazo=line.substring(48,51).trim(), garReal=line.substring(51,54).trim();
       const cobReal=line.substring(54,57).trim(), garPers=line.substring(57,60).trim(), cobPers=line.substring(60,63).trim();
-      const rawStr=line.substring(63).replace(/\s/g,'');
-      const sitCode=/^(I\d{2})/.test(rawStr)?rawStr.substring(0,3):'';
-      const rawNum=sitCode?rawStr.substring(3):rawStr;
-      const imp=n=>{const s=rawNum.substring(n*12,(n+1)*12);return s&&/^\d+$/.test(s.trim())?parseInt(s,10):0;};
-      const importes={dispuesto:imp(0),dispuestoVencido:imp(1),dispuestoDemora:imp(2),disponible:imp(3),disponibleVencido:imp(4),disponibleDemora:imp(5)};
+      // Campo 15: Situación (posiciones 63-65). Valores: I16-I21 o ZZZ (no aplicable)
+      const situacionRaw=line.substring(63,66).trim();
+      const situacion=/^I\d{2}$/.test(situacionRaw)?situacionRaw:'';
+      // Campos 16-19: Riesgos Directos (posición 66 en adelante, 12 dígitos cada uno)
+      const imp=n=>{const s=line.substring(66+n*12,66+(n+1)*12);return s&&/^\d+$/.test(s.trim())?parseInt(s,10):0;};
+      const importes={dispuesto:imp(0),dispuestoVencido:imp(1),dispuestoDemora:imp(2),disponible:imp(3)};
       if(!result.titulares[titular])result.titulares[titular]={};
       if(!result.titulares[titular][periodo])result.titulares[titular][periodo]=[];
-      result.titulares[titular][periodo].push({naturaleza,solidario,numPart,tipoProd:sitCode?'V32':tipoProd,situacion:sitCode||'',moneda,plazo,garReal,cobReal,garPers,cobPers,importes});
+      result.titulares[titular][periodo].push({naturaleza,solidario,numPart,tipoProd,situacion,moneda,plazo,garReal,cobReal,garPers,cobPers,importes});
     } else if (tipo === 'CI002') {
       const titular=line.substring(9,20).trim(), periodo=line.substring(20,26).trim();
       if(!result.titulares[titular])result.titulares[titular]={};
