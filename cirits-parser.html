@@ -281,13 +281,13 @@ function clasificar(r) {
 
   if (garReal === 'G20') {
     if (disp < 1) return { icon:'🏠', tipo:'hipoteca_cancelada', color:'orange', nombre:'Hipoteca inmobiliaria', pista:'Aparece con importe cero o residual. Posiblemente cancelada recientemente. El banco puede tardar hasta 1 mes en comunicarlo al BdE.', cancelada:true, docsPedir:['Nota simple del Registro','Certificado de cancelación del banco'] };
-    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión. ⚠️ El plazo (${PLAZO[plazo]||plazo}) es el plazo residual que el banco declaró al BdE — puede no coincidir con la realidad si el banco lo reportó incorrectamente. Confirmar cuadro de amortización.`, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
+    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión.`, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
   }
 
   if (garReal === 'G21') return {
     icon:'🚗', tipo:'garantia_real', color:'amber',
     nombre:'Préstamo con garantía real (no hipotecaria)',
-    pista:`Crédito con garantía real sobre un activo (habitual en vehículos, maquinaria o leasing). ⚠️ El plazo del CIRBE (${PLAZO[plazo]||plazo}) es el del contrato original, no el residual real. Verificar con el cliente qué financia y cuándo vence.${cobReal?' Cobertura: '+(COBERTURA[cobReal]||cobReal)+'.':''}`,
+    pista:`Crédito con garantía real sobre un activo (habitual en vehículos, maquinaria o leasing). Verificar con el cliente qué financia y cuándo vence.${cobReal?' Cobertura: '+(COBERTURA[cobReal]||cobReal)+'.':''}`,
     docsPedir:['Contrato del préstamo / financiación','Saldo pendiente actualizado','Confirmar fecha de vencimiento real']
   };
 
@@ -310,7 +310,7 @@ function clasificar(r) {
   return {
     icon:'💰', tipo:'personal', color:'amber',
     nombre:'Préstamo personal / consumo',
-    pista:`Préstamo sin garantía real. ⚠️ El plazo (${PLAZO[plazo]||plazo}) es el plazo residual que el banco declaró al BdE y puede no coincidir con la realidad. Confirmar importe pendiente y fecha real de vencimiento con el cliente.`,
+    pista:`Préstamo sin garantía real. Confirmar importe pendiente y fecha real de vencimiento con el cliente.`,
     docsPedir:['Contrato del préstamo','Saldo pendiente actualizado','Último recibo pagado','Confirmar fecha de vencimiento real']
   };
 }
@@ -433,7 +433,6 @@ function render(data) {
           const barClass=pct>80?'danger':pct>50?'warn':'';
           const xc=[venc>0||r.situacion?'has-incidencia':'',cls.cancelada?'posible-cancelada':''].filter(Boolean).join(' ');
           const tags=[];
-          tags.push(`<span class="tag blue">${PLAZO[r.plazo]||r.plazo}</span>`);
           if(r.garReal&&r.garReal!=='G19')tags.push(`<span class="tag blue">${GAR_REAL[r.garReal]||r.garReal}${r.cobReal?' · '+(COBERTURA[r.cobReal]||r.cobReal):''}</span>`);
           if(r.garPers)tags.push(`<span class="tag amber">${GAR_PERS[r.garPers]||r.garPers}${r.cobPers?' · '+(COBERTURA[r.cobPers]||r.cobPers):''}</span>`);
           if(r.moneda&&r.moneda!=='EUR')tags.push(`<span class="tag gray">${r.moneda}</span>`);
