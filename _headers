@@ -1,5 +1,5 @@
 https://cirite-invernomics.pages.dev/*
   X-Frame-Options: ALLOWALL
-  Content-Security-Policy: frame-ancestors 'self' https://b24-lp8rcy.bitrix24.es https://*.bitrix24.es https://*.bitrix24.com
+  Content-Security-Policy: frame-ancestors *
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
