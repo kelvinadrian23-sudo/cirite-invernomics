@@ -281,7 +281,7 @@ function clasificar(r) {
 
   if (garReal === 'G20') {
     if (disp < 1) return { icon:'🏠', tipo:'hipoteca_cancelada', color:'orange', nombre:'Hipoteca inmobiliaria', pista:'Aparece con importe cero o residual. Posiblemente cancelada recientemente. El banco puede tardar hasta 1 mes en comunicarlo al BdE.', cancelada:true, docsPedir:['Nota simple del Registro','Certificado de cancelación del banco'] };
-    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión. ⚠️ El plazo mostrado (${PLAZO[plazo]||plazo}) es el declarado al BdE por el banco — puede ser el plazo original del contrato y no los años restantes.`, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
+    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión. ⚠️ El plazo (${PLAZO[plazo]||plazo}) es el plazo residual que el banco declaró al BdE — puede no coincidir con la realidad si el banco lo reportó incorrectamente. Confirmar cuadro de amortización.`, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
   }
 
   if (garReal === 'G21') return {
@@ -310,7 +310,7 @@ function clasificar(r) {
   return {
     icon:'💰', tipo:'personal', color:'amber',
     nombre:'Préstamo personal / consumo',
-    pista:`Préstamo sin garantía real. ⚠️ El plazo del CIRBE (${PLAZO[plazo]||plazo}) es el del contrato original declarado por el banco — puede no coincidir con el plazo residual real. Verificar importe pendiente y fecha de vencimiento real con el cliente.`,
+    pista:`Préstamo sin garantía real. ⚠️ El plazo (${PLAZO[plazo]||plazo}) es el plazo residual que el banco declaró al BdE y puede no coincidir con la realidad. Confirmar importe pendiente y fecha real de vencimiento con el cliente.`,
     docsPedir:['Contrato del préstamo','Saldo pendiente actualizado','Último recibo pagado','Confirmar fecha de vencimiento real']
   };
 }
