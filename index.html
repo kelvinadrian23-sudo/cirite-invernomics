@@ -595,25 +595,29 @@ async function fetchFilesFromBde() {
             })();
         const allData = fallbackSource;
         if (allData.ok && allData.total > 0) {
-          const fromCache = allData.files.some(f => f.fromCache);
+          const fromDb = allData.files.some(f => f.fromCache);
           status.innerHTML =
-            '⚠ Ningún fichero contiene los DNIs <b>' + dnis.join(', ') + '</b>. ' +
-            'Hay <b>' + allData.total + '</b> fichero(s) ' + (fromCache ? 'en caché' : 'disponibles en BdE') + '.';
+            '⚠ Ningún fichero de BdE contiene los DNIs <b>' + dnis.join(', ') + '</b>. ' +
+            'Hay <b>' + allData.total + '</b> fichero(s) ' + (fromDb ? 'en base de datos' : 'disponibles en BdE') + '.';
           filesDiv.innerHTML =
             '<div style="padding:10px 0 6px;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">' +
-            (fromCache ? 'Ficheros en caché (ya descargados)' : 'Todos los ficheros disponibles en BdE') + '</div>' +
-            allData.files.map(f =>
-              '<div class="cirbe-file-row">' +
+            (fromDb ? 'Histórico de CIRBEs guardados' : 'Ficheros disponibles en BdE') + '</div>' +
+            allData.files.map(f => {
+              var fechaMostrar = f.date || f.cachedAt || '';
+              var idMatch = (f.identifier || '').match(/_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})(\d{2})_/);
+              if (idMatch) fechaMostrar = idMatch[1]+'/'+idMatch[2]+'/'+idMatch[3]+' '+idMatch[4]+':'+idMatch[5];
+              else if (fechaMostrar) fechaMostrar = new Date(fechaMostrar).toLocaleString('es-ES');
+              return '<div class="cirbe-file-row">' +
                 '<div class="cirbe-file-info">' +
-                  '<div class="cirbe-file-name" style="color:var(--text2)">' + escapeHtml(f.fileName || f.identifier) + '</div>' +
-                  '<div class="cirbe-file-meta">' + escapeHtml(f.date || '') + ' · ' + escapeHtml(f.process || 'CIRITS') + (f.fromCache ? ' · caché' : '') + '</div>' +
+                  '<div class="cirbe-file-name" style="color:var(--text2)">' + escapeHtml(f.fileName || 'CIRITS-EE331.TXT') + '</div>' +
+                  '<div class="cirbe-file-meta">' + escapeHtml(fechaMostrar) + ' · ' + escapeHtml(f.process || f.proceso || 'CIRITS') + (f.fromCache ? ' · guardado' : '') + '</div>' +
                 '</div>' +
                 '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
-                  'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process || 'CIRITS') + '\')">' +
+                  'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process || f.proceso || 'CIRITS') + '\')">' +
                   'Analizar →' +
                 '</button>' +
-              '</div>'
-            ).join('');
+              '</div>';
+            }).join('');
           filesDiv.style.display = 'block';
         } else {
           status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
@@ -623,19 +627,24 @@ async function fetchFilesFromBde() {
       }
       return;
     }
-    status.textContent = data.total + ' fichero(s) para ' + dnis.join(', ');
-    filesDiv.innerHTML = data.files.map(f =>
-      '<div class="cirbe-file-row">' +
+    status.textContent = data.total + ' fichero(s) encontrado(s) para ' + dnis.join(', ');
+    filesDiv.innerHTML = data.files.map(f => {
+      // Extraer fecha legible: del campo date de BdE, o del identifier (formato QYYYYMMDDHHMMSSCIRxxx_DDMMYYYY_HHMMSS_...)
+      var fechaMostrar = f.date || f.cachedAt || '';
+      var idMatch = (f.identifier || '').match(/_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})(\d{2})_/);
+      if (idMatch) fechaMostrar = idMatch[1]+'/'+idMatch[2]+'/'+idMatch[3]+' '+idMatch[4]+':'+idMatch[5];
+      var esHistorico = f.fromCache || !f.date;
+      return '<div class="cirbe-file-row">' +
         '<div class="cirbe-file-info">' +
-          '<div class="cirbe-file-name">' + escapeHtml(f.dnis ? f.dnis.join(', ') : f.fileName) + '</div>' +
-          '<div class="cirbe-file-meta">' + escapeHtml(f.date) + '</div>' +
+          '<div class="cirbe-file-name">' + escapeHtml(f.fileName || 'CIRITS-EE331.TXT') + '</div>' +
+          '<div class="cirbe-file-meta">' + escapeHtml(fechaMostrar) + (esHistorico ? ' · base de datos' : ' · nuevo de BdE') + '</div>' +
         '</div>' +
         '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
-          'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process) + '\')">' +
+          'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process || f.proceso || 'CIRITS') + '\')">' +
           'Analizar →' +
         '</button>' +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
     filesDiv.style.display = 'block';
   } catch (err) {
     status.textContent = '❌ ' + err.message;
