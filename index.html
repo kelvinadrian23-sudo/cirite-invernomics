@@ -583,48 +583,9 @@ async function fetchFilesFromBde() {
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     if (data.total === 0) {
-      // Sin coincidencia de DNI — buscar en caché y luego en BdE
-      try {
-        // 1. Intentar caché primero (ficheros ya descargados aunque BdE los haya consumido)
-        const cacheResp = await fetch(RAILWAY_URL + '/cache-list', { headers: { 'x-api-key': RAILWAY_API_KEY } });
-        const cacheData = await cacheResp.json();
-        const fallbackSource = (cacheData.ok && cacheData.total > 0) ? cacheData
-          : await (async () => {
-              const r = await fetch(RAILWAY_URL + '/descargar-cirbe', { headers: { 'x-api-key': RAILWAY_API_KEY } });
-              return r.json();
-            })();
-        const allData = fallbackSource;
-        if (allData.ok && allData.total > 0) {
-          const fromDb = allData.files.some(f => f.fromCache);
-          status.innerHTML =
-            '⚠ Ningún fichero de BdE contiene los DNIs <b>' + dnis.join(', ') + '</b>. ' +
-            'Hay <b>' + allData.total + '</b> fichero(s) ' + (fromDb ? 'en base de datos' : 'disponibles en BdE') + '.';
-          filesDiv.innerHTML =
-            '<div style="padding:10px 0 6px;font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;font-weight:600;">' +
-            (fromDb ? 'Histórico de CIRBEs guardados' : 'Ficheros disponibles en BdE') + '</div>' +
-            allData.files.map(f => {
-              var fechaMostrar = f.date || f.cachedAt || '';
-              var idMatch = (f.identifier || '').match(/_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})(\d{2})_/);
-              if (idMatch) fechaMostrar = idMatch[1]+'/'+idMatch[2]+'/'+idMatch[3]+' '+idMatch[4]+':'+idMatch[5];
-              else if (fechaMostrar) fechaMostrar = new Date(fechaMostrar).toLocaleString('es-ES');
-              return '<div class="cirbe-file-row">' +
-                '<div class="cirbe-file-info">' +
-                  '<div class="cirbe-file-name" style="color:var(--text2)">' + escapeHtml(f.fileName || 'CIRITS-EE331.TXT') + '</div>' +
-                  '<div class="cirbe-file-meta">' + escapeHtml(fechaMostrar) + ' · ' + escapeHtml(f.process || f.proceso || 'CIRITS') + (f.fromCache ? ' · guardado' : '') + '</div>' +
-                '</div>' +
-                '<button class="btn btn-accent" style="font-size:12px;padding:6px 14px;" ' +
-                  'onclick="downloadAndAnalyze(\'' + escapeHtml(f.identifier) + '\',\'' + escapeHtml(f.process || f.proceso || 'CIRITS') + '\')">' +
-                  'Analizar →' +
-                '</button>' +
-              '</div>';
-            }).join('');
-          filesDiv.style.display = 'block';
-        } else {
-          status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
-        }
-      } catch (e) {
-        status.textContent = 'No hay ficheros CIRBE disponibles para ' + dnis.join(', ') + '.';
-      }
+      status.innerHTML = '⚠ No se encontró ningún CIRBE para los DNIs <b>' + dnis.join(', ') + '</b> ni en BdE ni en la base de datos. Si has solicitado el CIRBE al BdE, espera a que esté disponible y vuelve a intentarlo.';
+      filesDiv.style.display = 'none';
+      btn.disabled = false;
       return;
     }
     status.textContent = data.total + ' fichero(s) encontrado(s) para ' + dnis.join(', ');
