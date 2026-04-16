@@ -214,6 +214,7 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .tsc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:0;padding:0;}
 .tsc-kpi{padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
 .tsc-kpi:last-child{border-right:none;}
+.tsc-kpi-icon{font-size:16px;line-height:1;margin-bottom:2px;}
 .tsc-kpi-val{font-family:var(--mono);font-size:16px;font-weight:700;line-height:1.1;}
 .tsc-kpi-val.g{color:var(--green);}
 .tsc-kpi-val.a{color:var(--amber);}
@@ -441,11 +442,11 @@ function render(data) {
     if(st.sinRiesgos){
       html+=`<div class="tsc-kpi"><div class="tsc-kpi-val g">—</div><div class="tsc-kpi-lbl">Sin riesgos</div></div>`;
     } else {
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':st.disp>0?'a':'g'}" style="font-size:${st.disp>9999?'13px':'16px'}">${st.disp>0?fmt(st.disp):'—'}</div><div class="tsc-kpi-lbl">💶 Deuda activa</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':'g'}" style="font-size:${st.venc>9999?'13px':'16px'}">${st.venc>0?fmt(st.venc):'Ninguno'}</div><div class="tsc-kpi-lbl">🚨 Vencidos</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val b">${st.nHip}</div><div class="tsc-kpi-lbl">🏠 Hipotecas</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nPers}</div><div class="tsc-kpi-lbl">💰 Préstamos</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nTar}</div><div class="tsc-kpi-lbl">💳 Tarjetas</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':st.disp>0?'a':'g'}" style="font-size:${st.disp>9999?'13px':'16px'}">${st.disp>0?fmt(st.disp):'—'}</div><div class="tsc-kpi-lbl">Deuda activa</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':'g'}" style="font-size:${st.venc>9999?'13px':'16px'}">${st.venc>0?fmt(st.venc):'Ninguno'}</div><div class="tsc-kpi-lbl">Vencidos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-icon">🏠</div><div class="tsc-kpi-val b">${st.nHip}</div><div class="tsc-kpi-lbl">Hipotecas</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-icon">💰</div><div class="tsc-kpi-val a">${st.nPers}</div><div class="tsc-kpi-lbl">Préstamos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-icon">💳</div><div class="tsc-kpi-val a">${st.nTar}</div><div class="tsc-kpi-lbl">Tarjetas</div></div>`;
     }
     html+=`</div></div>`;
   }
@@ -649,7 +650,14 @@ function process(file){
 }
 
 function getNombreByNIF(nif, fallbackIdx){
-  const lista=window._nombres||[];
+  // Build lista from postMessage cache or directly from parent (same origin)
+  let lista=window._nombres||[];
+  if(!lista.length){
+    try{
+      const pt=window.parent&&window.parent.loadedTitulares;
+      if(pt&&pt.length)lista=pt.map(t=>({nombre:(t.nombre||'').trim(),dni:(t.dni||'').trim().toUpperCase()}));
+    }catch(e){}
+  }
   if(!lista.length)return '';
   const norm=s=>String(s).replace(/^ES/i,'').replace(/[\s.\-]/g,'').toUpperCase();
   const baseNif=norm(nif);
@@ -657,6 +665,7 @@ function getNombreByNIF(nif, fallbackIdx){
     const d=norm(t.dni||'');
     if(d&&d===baseNif)return(t.nombre||'').trim();
   }
+  // positional fallback
   if(fallbackIdx!=null&&lista[fallbackIdx])return(lista[fallbackIdx].nombre||'').trim();
   return '';
 }
