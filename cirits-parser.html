@@ -26,6 +26,12 @@
   .entity-bar { background:#f0f0f0 !important; color:#111 !important; border-color:#ddd !important; }
   .incid-banner { background:#fff3f3 !important; color:#c00 !important; border-color:#fcc !important; }
   .cancel-banner { background:#fff8f0 !important; color:#a60 !important; border-color:#fdd !important; }
+  .tsc-nombre,.tit-nombre { color:#111 !important; }
+  .tsc-header,.titular-header { background:#f0f0f0 !important; border-color:#ddd !important; }
+  .tit-summary-card { border-color:#ddd !important; }
+  .tsc-kpi { border-color:#ddd !important; }
+  .tsc-kpi-val { color:#111 !important; }
+  .tsc-kpi-lbl { color:#555 !important; }
 }
 
 :root {
@@ -199,11 +205,12 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .tit-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
 .tsc-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap;}
 .tsc-nif{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);}
-.tsc-nombre{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em;flex:1;}
+.tsc-nombre{font-size:13px;font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase;flex:1;}
 .tsc-badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;margin-left:auto;white-space:nowrap;}
 .tsc-badge.g{background:var(--green-bg);border-color:var(--green-br);color:var(--green);}
 .tsc-badge.a{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber);}
 .tsc-badge.r{background:var(--red-bg);border-color:var(--red-br);color:var(--red);}
+.tit-nombre{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.04em;}
 .tsc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:0;padding:0;}
 .tsc-kpi{padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
 .tsc-kpi:last-child{border-right:none;}
@@ -434,11 +441,11 @@ function render(data) {
     if(st.sinRiesgos){
       html+=`<div class="tsc-kpi"><div class="tsc-kpi-val g">—</div><div class="tsc-kpi-lbl">Sin riesgos</div></div>`;
     } else {
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':st.disp>0?'a':'g'}" style="font-size:${st.disp>9999?'13px':'16px'}">${st.disp>0?fmt(st.disp):'—'}</div><div class="tsc-kpi-lbl">Deuda activa</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':'g'}" style="font-size:${st.venc>9999?'13px':'16px'}">${st.venc>0?fmt(st.venc):'Ninguno'}</div><div class="tsc-kpi-lbl">Vencidos</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val b">${st.nHip}</div><div class="tsc-kpi-lbl">Hipotecas</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nPers}</div><div class="tsc-kpi-lbl">Préstamos</div></div>`;
-      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nTar}</div><div class="tsc-kpi-lbl">Tarjetas</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':st.disp>0?'a':'g'}" style="font-size:${st.disp>9999?'13px':'16px'}">${st.disp>0?fmt(st.disp):'—'}</div><div class="tsc-kpi-lbl">💶 Deuda activa</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':'g'}" style="font-size:${st.venc>9999?'13px':'16px'}">${st.venc>0?fmt(st.venc):'Ninguno'}</div><div class="tsc-kpi-lbl">🚨 Vencidos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val b">${st.nHip}</div><div class="tsc-kpi-lbl">🏠 Hipotecas</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nPers}</div><div class="tsc-kpi-lbl">💰 Préstamos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nTar}</div><div class="tsc-kpi-lbl">💳 Tarjetas</div></div>`;
     }
     html+=`</div></div>`;
   }
@@ -461,7 +468,7 @@ function render(data) {
     const badgeClass=sinRiesgos?'tb-ok':totalTitVenc>0?'tb-err':'tb-warn';
     const badgeText=sinRiesgos?'✓ Sin deudas':totalTitVenc>0?'🚨 Con vencidos':'⚠ Activo';
     const titNom=getNombreByNIF(titular,_detIdx++);
-    html+=`<div class="titular-box"><div class="titular-header"><span class="titular-nif">${titular}</span>${titNom?`<span style="font-size:13px;font-weight:600;color:var(--text)">${escapeHtml(titNom)}</span>`:''}<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}<span class="titular-badge ${badgeClass}">${badgeText}</span></div>`;
+    html+=`<div class="titular-box"><div class="titular-header"><span class="titular-nif">${titular}</span>${titNom?`<span class="tit-nombre">${escapeHtml(titNom.toUpperCase())}</span>`:''}<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}<span class="titular-badge ${badgeClass}">${badgeText}</span></div>`;
     if(periods.length>1){html+=`<div class="period-tabs">`;for(const p of [...periods].reverse())html+=`<div class="ptab${p===pLast?' active':''}" onclick="switchPeriod('${titular}','${p}')" data-t="${titular}" data-p="${p}">${fmtPer(p)}</div>`;html+=`</div>`;}
     for(const period of periods){
       const regs=periodos[period];const isV=period===pLast;
