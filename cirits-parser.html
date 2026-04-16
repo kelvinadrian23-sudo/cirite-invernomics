@@ -211,16 +211,16 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .tsc-badge.a{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber);}
 .tsc-badge.r{background:var(--red-bg);border-color:var(--red-br);color:var(--red);}
 .tit-nombre{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.04em;}
-.tsc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:0;padding:0;}
-.tsc-kpi{padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.tsc-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding:0;}
+.tsc-kpi{padding:14px 10px;border-right:1px solid var(--border);text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .tsc-kpi:last-child{border-right:none;}
-.tsc-kpi-icon{font-size:16px;line-height:1;margin-bottom:2px;}
-.tsc-kpi-val{font-family:var(--mono);font-size:16px;font-weight:700;line-height:1.1;}
+.tsc-kpi-icon{font-size:20px;line-height:1;}
+.tsc-kpi-val{font-family:var(--mono);font-size:18px;font-weight:700;line-height:1;}
 .tsc-kpi-val.g{color:var(--green);}
 .tsc-kpi-val.a{color:var(--amber);}
 .tsc-kpi-val.r{color:var(--red);}
 .tsc-kpi-val.b{color:var(--accent);}
-.tsc-kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);font-family:var(--mono);margin-top:3px;}
+.tsc-kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);font-family:var(--mono);}
 
 /* ── LEGAL PRINT ── */
 #print-legal{display:none;font-size:8pt;color:#888;margin-top:16pt;border-top:1px solid #eee;padding-top:8pt;}
@@ -650,22 +650,16 @@ function process(file){
 }
 
 function getNombreByNIF(nif, fallbackIdx){
-  // Build lista from postMessage cache or directly from parent (same origin)
   let lista=window._nombres||[];
   if(!lista.length){
-    try{
-      const pt=window.parent&&window.parent.loadedTitulares;
-      if(pt&&pt.length)lista=pt.map(t=>({nombre:(t.nombre||'').trim(),dni:(t.dni||'').trim().toUpperCase()}));
-    }catch(e){}
+    try{const s=localStorage.getItem('_cirbeNombres');if(s)lista=JSON.parse(s)||[];}catch(e){}
   }
   if(!lista.length)return '';
-  const norm=s=>String(s).replace(/^ES/i,'').replace(/[\s.\-]/g,'').toUpperCase();
-  const baseNif=norm(nif);
+  const base=nif.replace(/^ES/,'').toUpperCase();
   for(const t of lista){
-    const d=norm(t.dni||'');
-    if(d&&d===baseNif)return(t.nombre||'').trim();
+    const d=(t.dni||'').replace(/^ES/,'').toUpperCase();
+    if(d&&(d===base||d===nif.toUpperCase()))return t.nombre||'';
   }
-  // positional fallback
   if(fallbackIdx!=null&&lista[fallbackIdx])return(lista[fallbackIdx].nombre||'').trim();
   return '';
 }

@@ -631,6 +631,7 @@ async function downloadAndAnalyze(identifier, proceso) {
     for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
     const frame = document.getElementById('parserFrame');
     const nombres = (loadedTitulares||[]).map(t=>({nombre:(t.nombre||'').trim(), dni:(t.dni||'').trim().toUpperCase()}));
+    try { localStorage.setItem('_cirbeNombres', JSON.stringify(nombres)); } catch(e){}
     frame.contentWindow.postMessage({ type: 'LOAD_CIRBE', buffer: buffer, fileName: data.fileName, nombres: nombres }, '*', [buffer]);
     status.textContent = '✓ Analizando ' + escapeHtml(data.fileName || identifier);
     filesDiv.style.display = 'none';
