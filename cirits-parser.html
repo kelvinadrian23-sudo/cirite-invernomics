@@ -11,6 +11,7 @@
 /* ── PRINT ── */
 @media print {
   body { background:#fff !important; color:#111 !important; font-size:10pt; }
+  header { display:none !important; }
   .drop,.actions,.period-tabs,#print-header { display:block !important; }
   .drop { display:none !important; }
   #print-header { display:flex !important; }
@@ -193,6 +194,26 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .btn.success{background:var(--green-bg);border-color:var(--green-br);color:var(--green);font-weight:600;}
 .btn.success:hover{background:rgba(16,185,129,.15);}
 
+/* ── TITULAR SUMMARY ── */
+.tit-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;}
+.tit-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+.tsc-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
+.tsc-nif{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);}
+.tsc-nombre{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+.tsc-badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;margin-top:4px;width:fit-content;}
+.tsc-badge.g{background:var(--green-bg);border-color:var(--green-br);color:var(--green);}
+.tsc-badge.a{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber);}
+.tsc-badge.r{background:var(--red-bg);border-color:var(--red-br);color:var(--red);}
+.tsc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:0;padding:0;}
+.tsc-kpi{padding:10px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.tsc-kpi:last-child{border-right:none;}
+.tsc-kpi-val{font-family:var(--mono);font-size:16px;font-weight:700;line-height:1.1;}
+.tsc-kpi-val.g{color:var(--green);}
+.tsc-kpi-val.a{color:var(--amber);}
+.tsc-kpi-val.r{color:var(--red);}
+.tsc-kpi-val.b{color:var(--accent);}
+.tsc-kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);font-family:var(--mono);margin-top:3px;}
+
 /* ── LEGAL PRINT ── */
 #print-legal{display:none;font-size:8pt;color:#888;margin-top:16pt;border-top:1px solid #eee;padding-top:8pt;}
 
@@ -255,6 +276,7 @@ const TIPO_PROD={V32:'Crédito financiero',V55:'Aval financiero',V63:'Aval no fi
 
 const fmt = (miles) => miles>0 ? new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:0,maximumFractionDigits:0}).format(miles*1000) : '—';
 const fmtPer = p => { if(!p||p.length<6) return p; const m=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return `${m[parseInt(p.substring(4,6))-1]} ${p.substring(0,4)}`; };
+const escapeHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 function clasificar(r) {
   const { tipoProd, plazo, garReal, cobReal, garPers, importes, solidario, naturaleza } = r;
@@ -373,33 +395,53 @@ function render(data) {
 
   let totalDisp=0,totalDispo=0,totalVenc=0,nHipotecas=0,nPersonales=0,nTarjetas=0,nIncidencias=0;
   const allDocs=new Set();
-  for(const[,periodos]of Object.entries(data.titulares)){
+  const titStats={};
+  for(const[titular,periodos]of Object.entries(data.titulares)){
     const pLast=Object.keys(periodos).sort().reverse()[0];
+    let tDisp=0,tDispo=0,tVenc=0,tHip=0,tPers=0,tTar=0;
+    const sinR=(periodos[pLast]||[]).every(r=>r.sinRiesgos);
     for(const r of periodos[pLast]||[]){
       if(r.sinRiesgos||r.solidario)continue;
       const venc=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
+      tDisp+=r.importes.dispuesto||0; tDispo+=r.importes.disponible||0; tVenc+=venc;
       totalDisp+=r.importes.dispuesto||0; totalDispo+=r.importes.disponible||0; totalVenc+=venc;
       if(venc>0||r.situacion)nIncidencias++;
       const cls=clasificar(r);
-      if(['hipoteca','hipoteca_probable','hipoteca_cancelada'].includes(cls.tipo))nHipotecas++;
-      else if(['tarjeta','linea'].includes(cls.tipo))nTarjetas++;
-      else if(['personal','coche','garantia_real'].includes(cls.tipo))nPersonales++;
+      if(['hipoteca','hipoteca_probable','hipoteca_cancelada'].includes(cls.tipo)){nHipotecas++;tHip++;}
+      else if(['tarjeta','linea'].includes(cls.tipo)){nTarjetas++;tTar++;}
+      else if(['personal','coche','garantia_real'].includes(cls.tipo)){nPersonales++;tPers++;}
       cls.docsPedir.forEach(d=>allDocs.add(d));
     }
+    titStats[titular]={disp:tDisp,dispo:tDispo,venc:tVenc,nHip:tHip,nPers:tPers,nTar:tTar,sinRiesgos:sinR};
   }
 
   let html='';
-  html+=`<div class="entity-bar"><span>Entidad: <strong>${data.entidad.codigo}</strong></span><span class="sep">·</span><span><strong>${data.entidad.nombre}</strong></span><span class="sep">·</span><span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span><span class="sep">·</span><span>Registros: <strong>${data.entidad.numRegistros}</strong></span></div>`;
+  html+=`<div class="entity-bar"><span>Entidad: <strong>${data.entidad.codigo}</strong></span><span class="sep">·</span><span><strong>${data.entidad.nombre}</strong></span><span class="sep">·</span><span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span></div>`;
 
-  const kpiDeudaColor=totalVenc>0?'r':totalDisp>200?'a':'gold';
-  html+=`<div class="kpi-row">
-    <div class="kpi ${kpiDeudaColor}"><div class="kpi-lbl">Deuda total activa</div><div class="kpi-val ${kpiDeudaColor}" style="font-size:${totalDisp>9999?'17px':'22px'}">${fmt(totalDisp)}</div><div class="kpi-sub">período más reciente</div></div>
-    <div class="kpi b"><div class="kpi-lbl">Crédito disponible</div><div class="kpi-val b" style="font-size:${totalDispo>9999?'17px':'22px'}">${totalDispo>0?fmt(totalDispo):'—'}</div><div class="kpi-sub">líneas abiertas</div></div>
-    <div class="kpi ${totalVenc>0?'r':'g'}"><div class="kpi-lbl">Importes vencidos</div><div class="kpi-val ${totalVenc>0?'r':'g'}">${totalVenc>0?fmt(totalVenc):'Ninguno'}</div><div class="kpi-sub">${totalVenc>0?'⚠ Revisar urgente':'sin incidencias'}</div></div>
-    <div class="kpi ${nHipotecas>0?'b':'g'}"><div class="kpi-lbl">Hipotecas</div><div class="kpi-val ${nHipotecas>0?'b':'g'}">${nHipotecas}</div><div class="kpi-sub">${nHipotecas===0?'sin hipotecas':nHipotecas===1?'detectada':'detectadas'}</div></div>
-    <div class="kpi ${nPersonales>0?'a':'g'}"><div class="kpi-lbl">Préstamos</div><div class="kpi-val ${nPersonales>0?'a':'g'}">${nPersonales}</div><div class="kpi-sub">${nPersonales===0?'ninguno':'verificar con cliente'}</div></div>
-    <div class="kpi ${nTarjetas>0?'a':'g'}"><div class="kpi-lbl">Tarjetas / líneas</div><div class="kpi-val ${nTarjetas>0?'a':'g'}">${nTarjetas}</div><div class="kpi-sub">${nTarjetas===0?'ninguna':'computa el límite'}</div></div>
-  </div>`;
+  html+=`<div class="tit-summary-grid">`;
+  for(const[titular,st]of Object.entries(titStats)){
+    const nombre=getNombreByNIF(titular);
+    const sc=st.sinRiesgos?'g':st.venc>0?'r':'a';
+    const st2=st.sinRiesgos?'✓ Sin deudas':st.venc>0?'🚨 Con vencidos':'⚠ Activo';
+    html+=`<div class="tit-summary-card">
+      <div class="tsc-header">
+        <div class="tsc-nif">${titular}</div>
+        ${nombre?`<div class="tsc-nombre">${escapeHtml(nombre)}</div>`:''}
+        <div class="tsc-badge ${sc}">${st2}</div>
+      </div>
+      <div class="tsc-kpis">`;
+    if(st.sinRiesgos){
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val g">—</div><div class="tsc-kpi-lbl">Sin riesgos</div></div>`;
+    } else {
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':st.disp>0?'a':'g'}" style="font-size:${st.disp>9999?'13px':'16px'}">${st.disp>0?fmt(st.disp):'—'}</div><div class="tsc-kpi-lbl">Deuda activa</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val ${st.venc>0?'r':'g'}" style="font-size:${st.venc>9999?'13px':'16px'}">${st.venc>0?fmt(st.venc):'Ninguno'}</div><div class="tsc-kpi-lbl">Vencidos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val b">${st.nHip}</div><div class="tsc-kpi-lbl">Hipotecas</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nPers}</div><div class="tsc-kpi-lbl">Préstamos</div></div>`;
+      html+=`<div class="tsc-kpi"><div class="tsc-kpi-val a">${st.nTar}</div><div class="tsc-kpi-lbl">Tarjetas</div></div>`;
+    }
+    html+=`</div></div>`;
+  }
+  html+=`</div>`;
 
   if(totalVenc>0) html+=`<div class="alert err"><span class="alert-icon">🚨</span><div><strong>Importes vencidos — requiere acción inmediata</strong>Se detectan ${fmt(totalVenc)} en pagos vencidos o impagados. Solicitar aclaración antes de presentar a ningún banco.</div></div>`;
   if(nHipotecas>0) html+=`<div class="alert info"><span class="alert-icon">🏠</span><div><strong>${nHipotecas} hipoteca${nHipotecas>1?'s':''} detectada${nHipotecas>1?'s':''}</strong>Verificar si la mantiene (vivienda/inversión) o fue cancelada recientemente. En caso de cancelación, pedir nota simple y certificado del banco.</div></div>`;
@@ -416,7 +458,8 @@ function render(data) {
     for(const r of regsLast){if(r.sinRiesgos||r.solidario)continue;totalTitDisp+=r.importes.dispuesto||0;totalTitVenc+=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);}
     const badgeClass=sinRiesgos?'tb-ok':totalTitVenc>0?'tb-err':'tb-warn';
     const badgeText=sinRiesgos?'✓ Sin deudas':totalTitVenc>0?'🚨 Con vencidos':'⚠ Activo';
-    html+=`<div class="titular-box"><div class="titular-header"><span class="titular-nif">${titular}</span><span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}<span class="titular-badge ${badgeClass}">${badgeText}</span></div>`;
+    const titNom=getNombreByNIF(titular);
+    html+=`<div class="titular-box"><div class="titular-header"><span class="titular-nif">${titular}</span>${titNom?`<span style="font-size:13px;font-weight:600;color:var(--text)">${escapeHtml(titNom)}</span>`:''}<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}<span class="titular-badge ${badgeClass}">${badgeText}</span></div>`;
     if(periods.length>1){html+=`<div class="period-tabs">`;for(const p of [...periods].reverse())html+=`<div class="ptab${p===pLast?' active':''}" onclick="switchPeriod('${titular}','${p}')" data-t="${titular}" data-p="${p}">${fmtPer(p)}</div>`;html+=`</div>`;}
     for(const period of periods){
       const regs=periodos[period];const isV=period===pLast;
@@ -596,8 +639,19 @@ function process(file){
   r.readAsArrayBuffer(file);
 }
 
+function getNombreByNIF(nif){
+  const lista=window._nombres||[];
+  const base=nif.replace(/^ES/,'').toUpperCase();
+  for(const t of lista){
+    const d=(t.dni||'').replace(/^ES/,'').toUpperCase();
+    if(d&&(d===base||d===nif.toUpperCase()))return t.nombre||'';
+  }
+  return '';
+}
+
 window.addEventListener('message',function(e){
   if(e.data&&e.data.type==='LOAD_CIRBE'&&e.data.buffer){
+    if(Array.isArray(e.data.nombres))window._nombres=e.data.nombres;
     try{
       const data=parseCIRITS(e.data.buffer);
       render(data);
