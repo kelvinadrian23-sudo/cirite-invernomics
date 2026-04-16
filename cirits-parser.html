@@ -195,12 +195,12 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .btn.success:hover{background:rgba(16,185,129,.15);}
 
 /* ── TITULAR SUMMARY ── */
-.tit-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px;}
+.tit-summary-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
 .tit-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
-.tsc-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
+.tsc-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap;}
 .tsc-nif{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);}
-.tsc-nombre{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
-.tsc-badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;margin-top:4px;width:fit-content;}
+.tsc-nombre{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em;flex:1;}
+.tsc-badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;margin-left:auto;white-space:nowrap;}
 .tsc-badge.g{background:var(--green-bg);border-color:var(--green-br);color:var(--green);}
 .tsc-badge.a{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber);}
 .tsc-badge.r{background:var(--red-bg);border-color:var(--red-br);color:var(--red);}
@@ -419,15 +419,16 @@ function render(data) {
   html+=`<div class="entity-bar"><span>Entidad: <strong>${data.entidad.codigo}</strong></span><span class="sep">·</span><span><strong>${data.entidad.nombre}</strong></span><span class="sep">·</span><span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span></div>`;
 
   html+=`<div class="tit-summary-grid">`;
+  let _titIdx=0;
   for(const[titular,st]of Object.entries(titStats)){
-    const nombre=getNombreByNIF(titular);
+    const nombre=getNombreByNIF(titular,_titIdx++);
     const sc=st.sinRiesgos?'g':st.venc>0?'r':'a';
     const st2=st.sinRiesgos?'✓ Sin deudas':st.venc>0?'🚨 Con vencidos':'⚠ Activo';
     html+=`<div class="tit-summary-card">
       <div class="tsc-header">
         <div class="tsc-nif">${titular}</div>
         ${nombre?`<div class="tsc-nombre">${escapeHtml(nombre)}</div>`:''}
-        <div class="tsc-badge ${sc}">${st2}</div>
+        <div class="tsc-badge ${sc}" style="margin-left:auto">${st2}</div>
       </div>
       <div class="tsc-kpis">`;
     if(st.sinRiesgos){
@@ -449,6 +450,7 @@ function render(data) {
   html+=`<div class="alert info" style="background:rgba(30,45,74,.3);border-color:var(--border);color:var(--text2)"><span class="alert-icon">ℹ️</span><div>El CIRBE es un informe <strong style="color:var(--text)">agregado</strong> — puede agrupar varios préstamos en una sola línea. La clasificación de producto es orientativa.</div></div>`;
 
   html+=`<div class="sec"><div class="sec-title">Detalle por titular</div>`;
+  let _detIdx=0;
   for(const[titular,periodos]of Object.entries(data.titulares)){
     const periods=Object.keys(periodos).sort();
     const pLast=[...periods].reverse()[0];
@@ -458,7 +460,7 @@ function render(data) {
     for(const r of regsLast){if(r.sinRiesgos||r.solidario)continue;totalTitDisp+=r.importes.dispuesto||0;totalTitVenc+=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);}
     const badgeClass=sinRiesgos?'tb-ok':totalTitVenc>0?'tb-err':'tb-warn';
     const badgeText=sinRiesgos?'✓ Sin deudas':totalTitVenc>0?'🚨 Con vencidos':'⚠ Activo';
-    const titNom=getNombreByNIF(titular);
+    const titNom=getNombreByNIF(titular,_detIdx++);
     html+=`<div class="titular-box"><div class="titular-header"><span class="titular-nif">${titular}</span>${titNom?`<span style="font-size:13px;font-weight:600;color:var(--text)">${escapeHtml(titNom)}</span>`:''}<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Datos a ${fmtPer(pLast)}</span>${totalTitDisp>0?`<span class="titular-total" style="color:${totalTitVenc>0?'var(--red)':'var(--amber)'}">${fmt(totalTitDisp)}</span>`:''}<span class="titular-badge ${badgeClass}">${badgeText}</span></div>`;
     if(periods.length>1){html+=`<div class="period-tabs">`;for(const p of [...periods].reverse())html+=`<div class="ptab${p===pLast?' active':''}" onclick="switchPeriod('${titular}','${p}')" data-t="${titular}" data-p="${p}">${fmtPer(p)}</div>`;html+=`</div>`;}
     for(const period of periods){
@@ -639,13 +641,16 @@ function process(file){
   r.readAsArrayBuffer(file);
 }
 
-function getNombreByNIF(nif){
+function getNombreByNIF(nif, fallbackIdx){
   const lista=window._nombres||[];
-  const base=nif.replace(/^ES/,'').toUpperCase();
+  if(!lista.length)return '';
+  const norm=s=>String(s).replace(/^ES/i,'').replace(/[\s.\-]/g,'').toUpperCase();
+  const baseNif=norm(nif);
   for(const t of lista){
-    const d=(t.dni||'').replace(/^ES/,'').toUpperCase();
-    if(d&&(d===base||d===nif.toUpperCase()))return t.nombre||'';
+    const d=norm(t.dni||'');
+    if(d&&d===baseNif)return(t.nombre||'').trim();
   }
+  if(fallbackIdx!=null&&lista[fallbackIdx])return(lista[fallbackIdx].nombre||'').trim();
   return '';
 }
 
