@@ -292,13 +292,6 @@ function clasificar(r) {
   const dispo = importes.disponible || 0;
   const total = disp + dispo;
 
-  if (solidario) return {
-    icon:'🤝', tipo:'solidario', color:'purple',
-    nombre:'Deuda solidaria / riesgo compartido',
-    pista:`Aparece como ${solidario==='T33'?'riesgo solidario':'riesgo colectivo'} con ${r.numPart} partícipes. El cliente puede ser cotitular o avalista. ⚠️ Verificar si es titular principal o avalista — cambia cómo lo computa el banco.`,
-    docsPedir:['Contrato del préstamo para confirmar si es titular o avalista','Si es solo avalista: acreditar que el titular principal paga correctamente']
-  };
-
   if (naturaleza === 'T19') return {
     icon:'🛡️', tipo:'garante', color:'purple',
     nombre:'Riesgo como avalista / garante',
@@ -309,10 +302,19 @@ function clasificar(r) {
   if (tipoProd === 'V55') return { icon:'🛡️', tipo:'aval', color:'purple', nombre:'Aval financiero prestado', pista:'El cliente ha prestado un aval financiero. Computa como riesgo pero no es deuda directa suya.', docsPedir:['Contrato de aval'] };
   if (tipoProd === 'V63') return { icon:'📋', tipo:'aval', color:'purple', nombre:'Aval técnico / no financiero', pista:'Aval de obra o técnico. Riesgo financiero bajo.', docsPedir:[] };
 
+  const solidNote = solidario ? ` Cotitular con ${r.numPart} partícipes — el importe total computa para cada titular.` : '';
+
   if (garReal === 'G20') {
-    if (disp < 1) return { icon:'🏠', tipo:'hipoteca_cancelada', color:'orange', nombre:'Hipoteca inmobiliaria', pista:'Aparece con importe cero o residual. Posiblemente cancelada recientemente. El banco puede tardar hasta 1 mes en comunicarlo al BdE.', cancelada:true, docsPedir:['Nota simple del Registro','Certificado de cancelación del banco'] };
-    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión.`, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
+    if (disp < 1) return { icon:'🏠', tipo:'hipoteca_cancelada', color:'orange', nombre:'Hipoteca inmobiliaria', pista:'Aparece con importe cero o residual. Posiblemente cancelada recientemente. El banco puede tardar hasta 1 mes en comunicarlo al BdE.'+solidNote, cancelada:true, docsPedir:['Nota simple del Registro','Certificado de cancelación del banco'] };
+    return { icon:'🏠', tipo:'hipoteca', color:'blue', nombre:'Hipoteca inmobiliaria', pista:`Préstamo con garantía hipotecaria sobre inmueble.${cobReal==='E14'?' Cobertura total.':cobReal==='E15'?' Cobertura parcial.':''} Verificar si es vivienda habitual, segunda residencia o inversión.`+solidNote, docsPedir:['Escritura de hipoteca o cuadro de amortización','Certificado de saldo pendiente','Último recibo pagado'] };
   }
+
+  if (solidario) return {
+    icon:'🤝', tipo:'solidario', color:'purple',
+    nombre:'Deuda solidaria / riesgo compartido',
+    pista:`Aparece como ${solidario==='T33'?'riesgo solidario':'riesgo colectivo'} con ${r.numPart} partícipes. El cliente puede ser cotitular o avalista. ⚠️ Verificar si es titular principal o avalista — cambia cómo lo computa el banco.`,
+    docsPedir:['Contrato del préstamo para confirmar si es titular o avalista','Si es solo avalista: acreditar que el titular principal paga correctamente']
+  };
 
   if (garReal === 'G21') return {
     icon:'🚗', tipo:'garantia_real', color:'amber',
@@ -409,12 +411,13 @@ function render(data) {
     let tDisp=0,tDispo=0,tVenc=0,tHip=0,tPers=0,tTar=0;
     const sinR=(periodos[pLast]||[]).every(r=>r.sinRiesgos);
     for(const r of periodos[pLast]||[]){
-      if(r.sinRiesgos||r.solidario)continue;
+      if(r.sinRiesgos)continue;
+      const cls=clasificar(r);
+      if(cls.tipo==='solidario')continue;
       const venc=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);
       tDisp+=r.importes.dispuesto||0; tDispo+=r.importes.disponible||0; tVenc+=venc;
       totalDisp+=r.importes.dispuesto||0; totalDispo+=r.importes.disponible||0; totalVenc+=venc;
       if(venc>0||r.situacion)nIncidencias++;
-      const cls=clasificar(r);
       if(['hipoteca','hipoteca_probable','hipoteca_cancelada'].includes(cls.tipo)){nHipotecas++;tHip++;}
       else if(['tarjeta','linea'].includes(cls.tipo)){nTarjetas++;tTar++;}
       else if(['personal','coche','garantia_real'].includes(cls.tipo)){nPersonales++;tPers++;}
@@ -425,6 +428,10 @@ function render(data) {
 
   let html='';
   html+=`<div class="entity-bar"><span>Entidad: <strong>${data.entidad.codigo}</strong></span><span class="sep">·</span><span><strong>${data.entidad.nombre}</strong></span><span class="sep">·</span><span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span></div>`;
+
+  const _dbgN=window._nombres||[];
+  if(_dbgN.length)html+=`<div style="display:none" id="_dbg_nombres" data-n="${escapeHtml(JSON.stringify(_dbgN))}"></div>`;
+  else html+=`<div style="background:#7c2d12;color:#fca5a5;padding:5px 10px;font-size:11px;border-radius:4px;margin-bottom:8px">⚠ Nombres no cargados — ¿se descargó el CIRBE desde Bitrix24? (window._nombres vacío)</div>`;
 
   html+=`<div class="tit-summary-grid">`;
   let _titIdx=0;
@@ -465,7 +472,7 @@ function render(data) {
     const regsLast=periodos[pLast]||[];
     const sinRiesgos=regsLast.every(r=>r.sinRiesgos);
     let totalTitDisp=0,totalTitVenc=0;
-    for(const r of regsLast){if(r.sinRiesgos||r.solidario)continue;totalTitDisp+=r.importes.dispuesto||0;totalTitVenc+=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);}
+    for(const r of regsLast){if(r.sinRiesgos)continue;const _c=clasificar(r);if(_c.tipo==='solidario')continue;totalTitDisp+=r.importes.dispuesto||0;totalTitVenc+=(r.importes.dispuestoVencido||0)+(r.importes.disponibleVencido||0);}
     const badgeClass=sinRiesgos?'tb-ok':totalTitVenc>0?'tb-err':'tb-warn';
     const badgeText=sinRiesgos?'✓ Sin deudas':totalTitVenc>0?'🚨 Con vencidos':'⚠ Activo';
     const titNom=getNombreByNIF(titular,_detIdx++);
