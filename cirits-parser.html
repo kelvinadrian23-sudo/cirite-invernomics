@@ -205,12 +205,12 @@ main{max-width:940px;margin:0 auto;padding:28px 24px;}
 .tit-summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
 .tsc-header{padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap;}
 .tsc-nif{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);}
-.tsc-nombre{font-size:13px;font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase;flex:1;}
+.tsc-nombre{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.04em;text-transform:uppercase;flex:1;}
 .tsc-badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;margin-left:auto;white-space:nowrap;}
 .tsc-badge.g{background:var(--green-bg);border-color:var(--green-br);color:var(--green);}
 .tsc-badge.a{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber);}
 .tsc-badge.r{background:var(--red-bg);border-color:var(--red-br);color:var(--red);}
-.tit-nombre{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.04em;}
+.tit-nombre{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em;}
 .tsc-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:0;padding:0;}
 .tsc-kpi{padding:14px 10px;border-right:1px solid var(--border);text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .tsc-kpi:last-child{border-right:none;}
@@ -654,19 +654,21 @@ function getNombreByNIF(nif, fallbackIdx){
   if(!lista.length){
     try{const s=localStorage.getItem('_cirbeNombres');if(s)lista=JSON.parse(s)||[];}catch(e){}
   }
-  if(!lista.length)return '';
+  if(!lista.length){console.warn('[CIRBE] getNombreByNIF: lista vacía para',nif);return '';}
   const base=nif.replace(/^ES/,'').toUpperCase();
   for(const t of lista){
     const d=(t.dni||'').replace(/^ES/,'').toUpperCase();
-    if(d&&(d===base||d===nif.toUpperCase()))return t.nombre||'';
+    if(d&&(d===base||d===nif.toUpperCase())){console.log('[CIRBE] match NIF',nif,'→',t.nombre);return t.nombre||'';}
   }
+  console.warn('[CIRBE] sin match NIF',nif,'base='+base,'lista=',JSON.stringify(lista.map(t=>t.dni)));
   if(fallbackIdx!=null&&lista[fallbackIdx])return(lista[fallbackIdx].nombre||'').trim();
   return '';
 }
 
 window.addEventListener('message',function(e){
   if(e.data&&e.data.type==='LOAD_CIRBE'&&e.data.buffer){
-    if(Array.isArray(e.data.nombres))window._nombres=e.data.nombres;
+    if(Array.isArray(e.data.nombres)){window._nombres=e.data.nombres;console.log('[CIRBE] nombres recibidos:',JSON.stringify(window._nombres));}
+    else{console.warn('[CIRBE] nombres no recibidos en mensaje',e.data);}
     try{
       const data=parseCIRITS(e.data.buffer);
       render(data);
