@@ -430,8 +430,6 @@ function render(data) {
   html+=`<div class="entity-bar"><span>Entidad: <strong>${data.entidad.codigo}</strong></span><span class="sep">·</span><span><strong>${data.entidad.nombre}</strong></span><span class="sep">·</span><span>Titulares: <strong>${Object.keys(data.titulares).length}</strong></span></div>`;
 
   const _dbgN=window._nombres||[];
-  if(_dbgN.length)html+=`<div style="display:none" id="_dbg_nombres" data-n="${escapeHtml(JSON.stringify(_dbgN))}"></div>`;
-  else html+=`<div style="background:#7c2d12;color:#fca5a5;padding:5px 10px;font-size:11px;border-radius:4px;margin-bottom:8px">⚠ Nombres no cargados — ¿se descargó el CIRBE desde Bitrix24? (window._nombres vacío)</div>`;
 
   html+=`<div class="tit-summary-grid">`;
   let _titIdx=0;
