@@ -378,6 +378,7 @@ async function loadFromBitrix(){
     const defs=[{label:'1ER TITULAR',...FIELDS.titular1},{label:'2DO TITULAR',...FIELDS.titular2},{label:'3ER TITULAR',...FIELDS.titular3}];
     for(const t of defs){const n=(deal[t.nombre]||'').trim();const d=(deal[t.dni]||'').trim();if(n||d)loadedTitulares.push({label:t.label,nombre:n,dni:d});}
     if(loadedTitulares.length===0) throw new Error('No se encontraron titulares. Verifica que los campos nombre/DNI estén rellenos.');
+    try{localStorage.setItem('_cirbeNombres',JSON.stringify(loadedTitulares.map(t=>({nombre:(t.nombre||'').trim(),dni:(t.dni||'').trim().toUpperCase()}))));}catch(e){}
     renderLoadedData(dealTitle,dealId);
   } catch(err){
     showErr('bitrixError','Error: '+err.message);
