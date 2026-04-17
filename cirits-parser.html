@@ -652,7 +652,18 @@ fi.addEventListener('change',()=>{if(fi.files[0])process(fi.files[0]);});
 
 function process(file){
   const r=new FileReader();
-  r.onload=e=>{try{const data=parseCIRITS(e.target.result);render(data);dz.style.display='none';}catch(err){alert('Error al procesar el fichero: '+err.message);}};
+  r.onload=e=>{
+    try{
+      const data=parseCIRITS(e.target.result);
+      if(window._nombres&&window._nombres.length){
+        render(data);dz.style.display='none';
+      } else {
+        window._pendingRender=data;
+        window.parent.postMessage({type:'REQUEST_NOMBRES'},'*');
+        setTimeout(()=>{if(window._pendingRender){render(window._pendingRender);window._pendingRender=null;dz.style.display='none';}},400);
+      }
+    }catch(err){alert('Error al procesar el fichero: '+err.message);}
+  };
   r.readAsArrayBuffer(file);
 }
 
@@ -673,6 +684,12 @@ function getNombreByNIF(nif, fallbackIdx){
 }
 
 window.addEventListener('message',function(e){
+  if(e.data&&e.data.type==='SET_NOMBRES'&&Array.isArray(e.data.nombres)){
+    window._nombres=e.data.nombres;
+    console.log('[CIRBE] SET_NOMBRES:',JSON.stringify(window._nombres));
+    if(window._pendingRender){render(window._pendingRender);window._pendingRender=null;dz.style.display='none';}
+    return;
+  }
   if(e.data&&e.data.type==='LOAD_CIRBE'&&e.data.buffer){
     if(Array.isArray(e.data.nombres)){window._nombres=e.data.nombres;console.log('[CIRBE] nombres recibidos:',JSON.stringify(window._nombres));}
     else{console.warn('[CIRBE] nombres no recibidos en mensaje',e.data);}

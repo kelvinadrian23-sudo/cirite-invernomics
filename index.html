@@ -640,6 +640,16 @@ async function downloadAndAnalyze(identifier, proceso) {
     status.textContent = '❌ ' + err.message;
   }
 }
+
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'REQUEST_NOMBRES') {
+    const frame = document.getElementById('parserFrame');
+    if (frame && frame.contentWindow) {
+      const nombres = (loadedTitulares||[]).map(t=>({nombre:(t.nombre||'').trim(), dni:(t.dni||'').trim().toUpperCase()}));
+      frame.contentWindow.postMessage({ type: 'SET_NOMBRES', nombres: nombres }, '*');
+    }
+  }
+});
 </script>
 </body>
 </html>
