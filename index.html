@@ -564,8 +564,14 @@ async function fetchFilesFromBde() {
         }
       }
       if (deal) {
-        var defs = [FIELDS.titular1, FIELDS.titular2, FIELDS.titular3];
-        for (var t of defs) { var d = (deal[t.dni] || '').trim().toUpperCase(); if (d) dnis.push(d); }
+        var defs = [{label:'1ER TITULAR',...FIELDS.titular1},{label:'2DO TITULAR',...FIELDS.titular2},{label:'3ER TITULAR',...FIELDS.titular3}];
+        loadedTitulares = [];
+        for (var t of defs) {
+          var d = (deal[t.dni] || '').trim().toUpperCase();
+          var n = (deal[t.nombre] || '').trim();
+          if (d || n) loadedTitulares.push({label: t.label, nombre: n, dni: d});
+          if (d) dnis.push(d);
+        }
       }
     } catch (e) { console.log('Error cargando titulares:', e.message); }
   }
