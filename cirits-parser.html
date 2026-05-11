@@ -694,17 +694,11 @@ window.addEventListener('message',function(e){
     try{
       const data=parseCIRITS(e.data.buffer);
       const dealDnis=(window._nombres||[]).map(n=>(n.dni||'').trim().toUpperCase()).filter(d=>d);
-      const _dbg=document.getElementById('_dbg')||Object.assign(document.createElement('div'),{id:'_dbg',style:'background:#f80;color:#000;padding:6px 10px;font-size:11px;font-family:monospace;margin-bottom:8px;border-radius:4px;'});
-      document.getElementById('results').prepend(_dbg);
       if(dealDnis.length>0){
-        const antes=Object.keys(data.titulares);
-        for(const nif of antes){
+        for(const nif of Object.keys(data.titulares)){
           const match=dealDnis.some(d=>nif===d||nif==='ES'+d||nif.endsWith(d)||d.endsWith(nif));
           if(!match)delete data.titulares[nif];
         }
-        _dbg.textContent='FILTRO: deal DNIs=['+dealDnis.join(',')+'] | en fichero=['+antes.join(',')+'] | tras filtro=['+Object.keys(data.titulares).join(',')+']';
-      } else {
-        _dbg.textContent='FILTRO: sin DNIs del deal — mostrando todos (nombres='+JSON.stringify(window._nombres)+')';
       }
       render(data);
       dz.style.display='none';
