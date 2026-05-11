@@ -694,11 +694,15 @@ window.addEventListener('message',function(e){
     try{
       const data=parseCIRITS(e.data.buffer);
       const dealDnis=(window._nombres||[]).map(n=>(n.dni||'').trim().toUpperCase()).filter(d=>d);
+      console.log('[FILTER] dealDnis:', JSON.stringify(dealDnis), '| titulares en fichero:', Object.keys(data.titulares));
       if(dealDnis.length>0){
         for(const nif of Object.keys(data.titulares)){
           const match=dealDnis.some(d=>nif===d||nif==='ES'+d||nif.endsWith(d)||d.endsWith(nif));
+          console.log('[FILTER] NIF', nif, '→', match ? 'INCLUIDO' : 'EXCLUIDO');
           if(!match)delete data.titulares[nif];
         }
+      } else {
+        console.warn('[FILTER] dealDnis vacío — mostrando todos los titulares');
       }
       render(data);
       dz.style.display='none';
