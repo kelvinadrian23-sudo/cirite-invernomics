@@ -693,6 +693,13 @@ window.addEventListener('message',function(e){
     else{console.warn('[CIRBE] nombres no recibidos en mensaje',e.data);}
     try{
       const data=parseCIRITS(e.data.buffer);
+      const dealDnis=(window._nombres||[]).map(n=>(n.dni||'').trim().toUpperCase()).filter(d=>d);
+      if(dealDnis.length>0){
+        for(const nif of Object.keys(data.titulares)){
+          const match=dealDnis.some(d=>nif===d||nif==='ES'+d||nif.endsWith(d)||d.endsWith(nif));
+          if(!match)delete data.titulares[nif];
+        }
+      }
       render(data);
       dz.style.display='none';
     }catch(err){
